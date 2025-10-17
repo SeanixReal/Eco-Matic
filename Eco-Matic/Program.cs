@@ -112,5 +112,16 @@ class Program
     public static void Main(string[] args)
     {
         Console.WriteLine("Eco-Matic is still in development...");
+
+        bool flag = true;
+        while (flag)
+        {
+            MainMenu();
+        }
+    }
+
+    public static void MainMenu()
+    {
+        
     }
 }

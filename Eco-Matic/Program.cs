@@ -37,7 +37,7 @@ interface IHasVolume
     public double Volume { get; set; }
 }
 
-class DrinkItem : VendingItem , IHasVolume 
+class DrinkItem : VendingItem, IHasVolume
 {
     public double Volume { get; set; }
 
@@ -46,10 +46,71 @@ class DrinkItem : VendingItem , IHasVolume
         Volume = volume;
     }
 
-    GetExamineInfo
+    public override string GetDisplayInfo()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override string GetDispenseMessage()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override string GetExamineMessage()
+    {
+        throw new NotImplementedException();
+    }
+}
+
+class SnackItem : VendingItem, IHasCalories
+{
+    public double Calories { get; set; }
+
+    public SnackItem(string itemName, double itemPrice, double calories) : base(itemName, itemPrice)
+    {
+        Calories = calories;
+    }
+
+    public override string GetDisplayInfo()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override string GetDispenseMessage()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override string GetExamineMessage()
+    {
+        throw new NotImplementedException();
+    }
+}
+
+class MiscItem : VendingItem
+{
+    public MiscItem(string itemName, double itemPrice) : base(itemName, itemPrice) { }
+
+    public override string GetDisplayInfo()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override string GetDispenseMessage()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override string GetExamineMessage()
+    {
+        throw new NotImplementedException();
+    }
 }
 
 class Program
 {
-
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Eco-Matic is still in development...");
+    }
 }

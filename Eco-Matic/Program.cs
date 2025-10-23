@@ -7,6 +7,7 @@ using System.Threading;
 class EcoMatic
 {
     public double CurrentBalance { get; set; }
+    private VendingItem[] _invetory = new VendingItem[6];
     private int _itemCount = 0;
     private string _inventoryFilePath;
     private string _transactionLogFilePath;
@@ -15,10 +16,19 @@ class EcoMatic
     {
         _inventoryFilePath = inventoryFp;
         _transactionLogFilePath = transactionLogFp;
-        // get fp of inventory and transaction
         // initialize inventory 
     }
 
+    public void ShowInventory()
+    {
+
+    }
+    
+    public void Purchase()
+    {
+
+    }
+    
     public void Recycle()
     {
         
@@ -33,28 +43,9 @@ class EcoMatic
     {
         
     }
-
-    private void LoadInventory()
-    {
-
-    }
     
-    public void ShowInventory()
-    {
-        
-    }
-    
-    public void Purchase()
-    {
-
-    }
 
     public void GetChange()
-    {
-
-    }
-
-    private void UpdateInventory()
     {
 
     }
@@ -68,15 +59,10 @@ class EcoMatic
     {
 
     }
-    
+
     public void RemoveItem()
     {
-        
-    }
-    
-    private void UpdateTranscaction(string eventName, string name, double total)
-    {
-        // something like {eventname}: {name} purchased for {total}
+
     }
 
     public void ViewLog()
@@ -88,6 +74,23 @@ class EcoMatic
     {
 
     }
+
+        
+    private void LoadInventory()
+    {
+
+    }
+    
+    private void UpdateInventory()
+    {
+
+    }
+
+    private void UpdateTranscaction(string eventName, string name, double total)
+    {
+        // something like {eventname}: {name} purchased for {total}
+    }
+
 }
 
 abstract class VendingItem

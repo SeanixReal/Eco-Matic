@@ -20,7 +20,7 @@ class EcoMatic
         _transactionLogFilePath = transactionLogfilePath;
         CheckFile(_inventoryFilePath);
         CheckFile(_transactionLogFilePath);
-        LoadInventory(_inventoryFilePath);
+        LoadInventory();
     }
 
     public void ShowInventory()
@@ -78,9 +78,33 @@ class EcoMatic
 
     }
 
-    private void LoadInventory(string filePath)
+    private void LoadInventory()
     {
+        string[] lines = File.ReadAllLines(_inventoryFilePath);
+        for (int i = 1; i < lines.Length; i++)
+        {
+            string[] parts = lines[i].Split(',');
+            string type = parts[0].Trim();
+            string name = parts[1].Trim();
+            double price = double.Parse(parts[2].Trim());
+            int stock = int.Parse(parts[3].Trim());
 
+
+            switch (type)
+            {
+                case "Snack":
+                    double calories = double.Parse(parts[4].Trim());
+                    _inventory[_itemCount++] = new SnackItem(name, price, stock, calories);
+                    break;
+                case "Drink":
+                    double volume = double.Parse(parts[4].Trim());
+                    _inventory[_itemCount++] = new DrinkItem(name, price, stock, volume);
+                    break;
+                case "Misc":
+                    _inventory[_itemCount++] = new MiscItem(name, price, stock);
+                    break;
+            }
+        }
     }
 
     private void FileNotExist(string filePath)
@@ -124,8 +148,6 @@ class EcoMatic
         {
             throw new Exception("File path not recognize.");
         }
-
-
     }
     
     private bool IsTypeValid(string type)
@@ -148,9 +170,17 @@ class EcoMatic
                 try
                 {
                     string[] parts = lines[i].Split(',');
-
-                    if (IsTypeValid(parts[0])) return false;
                     
+                    string type = parts[0].Trim();
+                    if (!IsTypeValid(type)) return false;
+
+                    double price = double.Parse(parts[2].Trim());
+                    int stock = int.Parse(parts[3].Trim());
+
+                    if (type == "Snack" || type == "Drink")
+                    {
+                        double additional = double.Parse(parts[4].Trim());
+                    }
                 }
                 catch (FormatException)
                 {
@@ -204,6 +234,12 @@ class EcoMatic
     
     private void UpdateInventory()
     {
+        using (StreamWriter w = new StreamWriter(_inventoryFilePath))
+        {
+            w.WriteLine("Type,Name,Price,Stock,Additional");
+
+            
+        }
 
     }
 
@@ -253,17 +289,17 @@ class DrinkItem : VendingItem, IHasVolume
 
     public override string GetDisplayInfo()
     {
-        return "";
+           return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
     }
 
     public override string GetDispenseMessage()
     {
-        return "";
+        return $"🥤 Dispensing. Enjoy your {Volume}ml {ItemName}!";
     }
 
     public override string GetExamineMessage()
     {
-        return "";
+        return $"This is a refreshing beverage, providing {Volume}ml of liquid.";
     }
 }
 
@@ -278,17 +314,17 @@ class SnackItem : VendingItem, IHasCalories
 
     public override string GetDisplayInfo()
     {
-        return "";
+           return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
     }
 
     public override string GetDispenseMessage()
     {
-        return "";
+        return $"🍿 Crunch! Grab your {ItemName}. ({Calories} Cal)";
     }
 
     public override string GetExamineMessage()
     {
-        return "";
+        return $"This snack contains {Calories} calories. Perfect for a quick energy boost.";
     }
 }
 
@@ -298,17 +334,17 @@ class MiscItem : VendingItem
 
     public override string GetDisplayInfo()
     {
-        return "";
+           return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
     }
 
     public override string GetDispenseMessage()
     {
-        return "";
+        return $"🛍️ Dispensing your {ItemName}. Thank you for using Eco-Matic!";
     }
 
     public override string GetExamineMessage()
     {
-        return "";
+        return $"A simple, reusable item designed to support eco-conscious living.";
     }
 }
 
@@ -317,7 +353,15 @@ class Program
 
     public static void Main(string[] args)
     {
-        EcoMatic ecoMatic = new EcoMatic("Inventory.csv", "TransactionLog.txt");
+        try
+        {
+            EcoMatic ecoMatic = new EcoMatic("Inventory.csv", "TransactionLog.txt");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Oopsie... Something went wrong: " + ex.Message);
+        }
+        
     }
 
     public static void MainMenu(EcoMatic ecoMatic)

@@ -13,6 +13,8 @@ class EcoMatic
 
     public EcoMatic(string inventoryFp, string transactionLogFp)
     {
+        _inventoryFilePath = inventoryFp;
+        _transactionLogFilePath = transactionLogFp;
         // get fp of inventory and transaction
         // initialize inventory 
     }

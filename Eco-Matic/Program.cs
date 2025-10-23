@@ -18,9 +18,8 @@ class EcoMatic
     {
         _inventoryFilePath = inventoryfilePath;
         _transactionLogFilePath = transactionLogfilePath;
-        CheckFile(_inventoryFilePath);
-        CheckFile(_transactionLogFilePath);
-        LoadInventory();
+        CheckFile();
+       
     }
 
     public void ShowInventory()
@@ -80,6 +79,8 @@ class EcoMatic
 
     private void LoadInventory()
     {
+        _inventory = new VendingItem[MaxItems]; 
+        _itemCount = 0;
         string[] lines = File.ReadAllLines(_inventoryFilePath);
         for (int i = 1; i < lines.Length; i++)
         {
@@ -130,23 +131,22 @@ class EcoMatic
         Console.WriteLine();
     }
 
-    private void CheckFile(string filePath)
+    private void CheckFile()
     {
-        if (filePath == _transactionLogFilePath || filePath == _inventoryFilePath)
+        PerformFileCheck(_transactionLogFilePath);
+        PerformFileCheck(_inventoryFilePath);
+    }
+    
+    private void PerformFileCheck(string filePath)
+    {
+        if (!File.Exists(filePath))
         {
-            if (!File.Exists(filePath))
-            {
-                FileNotExist(filePath);
-            }
-
-            if (!IsFileValid(filePath))
-            {
-                FileIsInvalid(filePath);
-            }
+            FileNotExist(filePath);
         }
-        else
+    
+        if (!IsFileValid(filePath))
         {
-            throw new Exception("File path not recognize.");
+            FileIsInvalid(filePath);
         }
     }
     
@@ -179,6 +179,8 @@ class EcoMatic
 
                     if (type == "Snack" || type == "Drink")
                     {
+                        if (parts.Length < 5) return false;
+                        if (string.IsNullOrWhiteSpace(parts[4])) return false;
                         double additional = double.Parse(parts[4].Trim());
                     }
                 }
@@ -229,7 +231,6 @@ class EcoMatic
         {
             throw new Exception("File Path is not recognized.");            
         }
-
     }
     
     private void UpdateInventory()
@@ -289,7 +290,7 @@ class DrinkItem : VendingItem, IHasVolume
 
     public override string GetDisplayInfo()
     {
-           return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
+        return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
     }
 
     public override string GetDispenseMessage()
@@ -314,7 +315,7 @@ class SnackItem : VendingItem, IHasCalories
 
     public override string GetDisplayInfo()
     {
-           return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
+        return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
     }
 
     public override string GetDispenseMessage()
@@ -334,7 +335,7 @@ class MiscItem : VendingItem
 
     public override string GetDisplayInfo()
     {
-           return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
+        return $"{ItemName} (₱{ItemPrice:F2}) [{ItemStock} in stock]";
     }
 
     public override string GetDispenseMessage()

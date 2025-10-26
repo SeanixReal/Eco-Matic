@@ -28,12 +28,13 @@ class EcoMatic
         _inventory[3] = new SnackItem("Nova", 40, 10, 180);
         _inventory[4] = new MiscItem("Bandage", 5, 10);
         _inventory[5] = new MiscItem("Eco Bag", 10, 10);
+        _itemCount = 6;
     }
 
     public void ShowInventory()
     {
-        Console.WriteLine("\n📦 Available Items:");
-        for (int i = 0; i < MaxItems; i++)
+        Console.WriteLine("\nAvailable Items:");
+        for (int i = 0; i < _itemCount; i++)
         {
             Console.WriteLine($"{i + 1}. {_inventory[i].GetDisplayInfo()}");
         }
@@ -43,20 +44,19 @@ class EcoMatic
     {
         if (CurrentBalance == 0)
         {
-            Console.WriteLine("⚠️ Please insert money first.");
+            Console.WriteLine("Please insert money first.");
             Thread.Sleep(2000);
             return;
         }
-        
-        
+
         int itemNumber;
-        Console.Write("🛒 Select item to purchase (0 to cancel): ");
-        while (!int.TryParse(Console.ReadLine(), out itemNumber) || itemNumber < 0 || itemNumber > MaxItems)
+        Console.Write("Select item to purchase (0 to cancel): ");
+        while (!int.TryParse(Console.ReadLine(), out itemNumber) || itemNumber < 0 || itemNumber > _itemCount)
         {
             Console.WriteLine("Invalid input. Please try again.");
             Console.Write($"Enter item number (1-{MaxItems}, or 0 to cancel): ");
         }
-        
+
         if (itemNumber == 0) return;
 
         int index = itemNumber - 1;
@@ -64,7 +64,7 @@ class EcoMatic
 
         if (itemChoice.ItemStock <= 0)
         {
-            Console.WriteLine($"❌ Sorry, {itemChoice.ItemName} is out of stock.");
+            Console.WriteLine($"Sorry, {itemChoice.ItemName} is out of stock.");
             Console.WriteLine("Press Enter to continue.");
             Console.ReadLine();
             return;
@@ -72,7 +72,7 @@ class EcoMatic
 
         if (CurrentBalance < itemChoice.ItemPrice)
         {
-            Console.WriteLine($"❌ Insufficient balance. {itemChoice.ItemName} costs ₱{itemChoice.ItemPrice:F2}.");
+            Console.WriteLine($"Insufficient balance. {itemChoice.ItemName} costs ₱{itemChoice.ItemPrice:F2}.");
             Console.WriteLine($"Your balance: ₱{CurrentBalance:F2}");
             Console.WriteLine("Press Enter to continue.");
             Console.ReadLine();
@@ -84,18 +84,18 @@ class EcoMatic
         Console.WriteLine(itemChoice.GetDispenseMessage());
         UpdateTransaction("Purchase", itemChoice.ItemName, itemChoice.ItemPrice);
         UpdateInventory();
-        
-        Console.WriteLine($"💰 Remaining balance: ₱{CurrentBalance:F2}");
+
+        Console.WriteLine($"Remaining balance: ₱{CurrentBalance:F2}");
         Console.WriteLine("Press Enter to continue.");
         Console.ReadLine();
     }
     
     public void Recycle()
     {
-        Console.WriteLine("♻️ Recycle for Cash!");
+        Console.WriteLine("Recycle for Cash!");
         for (int i = 0; i < _recycledItems.Length; i++)
         {
-            Console.WriteLine($"{i + 1}. {_recycledItems[i]} (₱{_recycledItemsPrice[i]:F2} each)");
+            Console.WriteLine($"{i + 1}. {_recycledItems[i]} (₱{_recycledItemsPrice[i]:F2} per gram)");
         }
 
         Console.Write("\nSelect item type to recycle (0 to cancel): ");
@@ -105,28 +105,27 @@ class EcoMatic
             Console.WriteLine("Invalid input. Please try again.");
             Console.Write($"Select item type (1-{_recycledItems.Length}, or 0 to cancel): ");
         }
-        
+
         if (choice == 0) return;
 
         int index = choice - 1;
-        Console.Write($"How many {_recycledItems[index]} items to recycle: ");
-        
-        int quantity;
-        while (!int.TryParse(Console.ReadLine(), out quantity) || quantity < 1)
+        Console.Write($"Enter weight of {_recycledItems[index]} to recycle (grams): ");
+
+        double grams;
+        while (!double.TryParse(Console.ReadLine(), out grams) || grams <= 0)
         {
-            Console.WriteLine("Invalid quantity. Please enter a positive number.");
-            Console.Write("Quantity: ");
+            Console.WriteLine("Invalid weight. Please enter a positive number.");
+            Console.Write("Weight (grams): ");
         }
 
-        double total = quantity * _recycledItemsPrice[index];
+        double total = grams * _recycledItemsPrice[index];
         CurrentBalance += total;
-        
-        Console.WriteLine($"\n♻️ Thank you for recycling {quantity} {_recycledItems[index]} item(s)!");
-        Console.WriteLine($"💵 You earned ₱{total:F2}");
-        Console.WriteLine($"💰 New balance: ₱{CurrentBalance:F2}");
-        UpdateTransaction("Recycle", _recycledItems[index], total);
-        
-        Console.WriteLine("\nPress Enter to continue.");
+
+        Console.WriteLine($"Thank you for recycling {grams} grams of {_recycledItems[index]}!");
+        Console.WriteLine($"You earned ₱{total:F2}");
+        Console.WriteLine($"New balance: ₱{CurrentBalance:F2}");
+
+        Console.WriteLine("Press Enter to continue.");
         Console.ReadLine();
     }
 
@@ -145,7 +144,7 @@ class EcoMatic
         int index = itemNumber - 1;
         VendingItem itemChoice = _inventory[index];
         
-        Console.WriteLine($"\n🔍 Examining: {itemChoice.ItemName}");
+        Console.WriteLine($"\nExamining: {itemChoice.ItemName}");
         Console.WriteLine($"Price: ₱{itemChoice.ItemPrice:F2}");
         Console.WriteLine($"Stock: {itemChoice.ItemStock} available");
         Console.WriteLine($"Details: {itemChoice.GetExamineMessage()}");
@@ -167,7 +166,7 @@ class EcoMatic
         if (amount == 0) return;
         
         CurrentBalance += amount;
-        Console.WriteLine($"💵 ₱{amount:F2} inserted successfully!");
+        Console.WriteLine($"₱{amount:F2} inserted successfully!");
         Console.WriteLine($"Current balance: ₱{CurrentBalance:F2}");
         
         Console.WriteLine("\nPress Enter to continue.");
@@ -182,24 +181,160 @@ class EcoMatic
             return;
         }
         
-        Console.WriteLine($"💰 Returning change: ₱{CurrentBalance:F2}");
+        Console.WriteLine($"Returning change: ₱{CurrentBalance:F2}");
         CurrentBalance = 0;
-        Console.WriteLine("Thank you for using Eco-Matic! 🌱");
+        Console.WriteLine("Thank you for using Eco-Matic!");
     }
     
     public void Restock()
     {
+        Console.Clear();
+        ShowInventory();
+        Console.WriteLine("Restock Item");
+        Console.Write("Enter item number to restock (0 to cancel): ");
+        int itemNumber;
+        while (!int.TryParse(Console.ReadLine(), out itemNumber) || itemNumber < 0 || itemNumber > _itemCount)
+        {
+            Console.WriteLine("Invalid input. Please try again.");
+            Console.Write($"Enter item number (1-{_itemCount}, or 0 to cancel): ");
+        }
 
+        if (itemNumber == 0) return;
+
+        int index = itemNumber - 1;
+        VendingItem itemToRestock = _inventory[index];
+
+        Console.Write($"Enter quantity to add to {itemToRestock.ItemName}'s stock: ");
+        int quantity;
+        while (!int.TryParse(Console.ReadLine(), out quantity) || quantity < 1)
+        {
+            Console.WriteLine("Invalid quantity. Please enter a positive number.");
+            Console.Write("Quantity: ");
+        }
+
+        itemToRestock.ItemStock += quantity;
+        Console.WriteLine($"{quantity} units added to {itemToRestock.ItemName}. New stock: {itemToRestock.ItemStock}");
+
+        Console.WriteLine("Press Enter to continue.");
+        Console.ReadLine();
     }
 
     public void AddItem()
     {
+        Console.Clear();
+        Console.WriteLine("Add New Item");
 
+        if (_itemCount >= MaxItems)
+        {
+            Console.WriteLine("Inventory is full. Cannot add more items.");
+            Console.WriteLine("Press Enter to continue.");
+            Console.ReadLine();
+            return;
+        }
+
+        Console.Write("Enter item name: ");
+        string name = Console.ReadLine() ?? "";
+
+        Console.Write("Enter item price: ");
+        double price;
+        while (!double.TryParse(Console.ReadLine(), out price) || price <= 0)
+        {
+            Console.WriteLine("Invalid price. Please enter a positive number.");
+            Console.Write("Price: ");
+        }
+
+        Console.Write("Enter item stock: ");
+        int stock;
+        while (!int.TryParse(Console.ReadLine(), out stock) || stock < 0)
+        {
+            Console.WriteLine("Invalid stock. Please enter a non-negative number.");
+            Console.Write("Stock: ");
+        }
+
+        Console.WriteLine("Select item type:");
+        Console.WriteLine("1. Drink");
+        Console.WriteLine("2. Snack");
+        Console.WriteLine("3. Miscellaneous");
+        Console.Write("Choice: ");
+        int typeChoice;
+        while (!int.TryParse(Console.ReadLine(), out typeChoice) || typeChoice < 1 || typeChoice > 3)
+        {
+            Console.WriteLine("Invalid choice. Please enter 1, 2, or 3.");
+            Console.Write("Choice: ");
+        }
+
+        VendingItem newItem = null;
+        switch (typeChoice)
+        {
+            case 1:
+                Console.Write("Enter volume (ml): ");
+                double volume;
+                while (!double.TryParse(Console.ReadLine(), out volume) || volume <= 0)
+                {
+                    Console.WriteLine("Invalid volume. Please enter a positive number.");
+                    Console.Write("Volume (ml): ");
+                }
+                newItem = new DrinkItem(name, price, stock, volume);
+                break;
+            case 2:
+                Console.Write("Enter calories: ");
+                double calories;
+                while (!double.TryParse(Console.ReadLine(), out calories) || calories <= 0)
+                {
+                    Console.WriteLine("Invalid calories. Please enter a positive number.");
+                    Console.Write("Calories: ");
+                }
+                newItem = new SnackItem(name, price, stock, calories);
+                break;
+            case 3:
+                newItem = new MiscItem(name, price, stock);
+                break;
+        }
+
+        if (newItem != null)
+        {
+            _inventory[_itemCount] = newItem;
+            _itemCount++;
+            Console.WriteLine($"{newItem.ItemName} added to inventory.");
+        }
+        else
+        {
+            Console.WriteLine("Failed to add item.");
+        }
+
+        Console.WriteLine("Press Enter to continue.");
+        Console.ReadLine();
     }
 
     public void RemoveItem()
     {
+        Console.Clear();
+        ShowInventory();
+        Console.WriteLine("Remove Item");
+        Console.Write("Enter item number to remove (0 to cancel): ");
+        int itemNumber;
+        while (!int.TryParse(Console.ReadLine(), out itemNumber) || itemNumber < 0 || itemNumber > _itemCount)
+        {
+            Console.WriteLine("Invalid input. Please try again.");
+            Console.Write($"Enter item number (1-{_itemCount}, or 0 to cancel): ");
+        }
 
+        if (itemNumber == 0) return;
+
+        int index = itemNumber - 1;
+        VendingItem itemToRemove = _inventory[index];
+
+        for (int i = index; i < _itemCount - 1; i++)
+        {
+            _inventory[i] = _inventory[i + 1];
+        }
+        _inventory[_itemCount - 1] = null;
+        _itemCount--;
+
+        Console.WriteLine($"{itemToRemove.ItemName} removed from inventory.");
+
+        Console.WriteLine("Press Enter to continue.");
+        Console.ReadLine();
     }
 
     public void ViewLog()

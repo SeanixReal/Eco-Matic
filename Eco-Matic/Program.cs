@@ -6,8 +6,14 @@ using System.Threading;
 // the project Eco-Matic!!
 class EcoMatic
 {
-    public double CurrentBalance { get; set; }
-    private VendingItem[] _invetory = new VendingItem[6];
+    const int MaxItems = 6; // min should be 6
+
+    public double CurrentBalance { get; private set; }
+    private VendingItem[] _inventory = new VendingItem[MaxItems];
+
+    private string[] _recycleItems = new string[] { "Plastic", "Glass", "Metal" };
+    private double[] _recycleValuePerGram = new double[] { 5, 10, 20 };
+
     private int _itemCount = 0;
     private string _inventoryFilePath;
     private string _transactionLogFilePath;
@@ -16,16 +22,41 @@ class EcoMatic
     {
         _inventoryFilePath = inventoryFp;
         _transactionLogFilePath = transactionLogFp;
-        // initialize inventory 
+        _inventory[0] = new DrinkItem("Coca Cola", 25, 10, 500);
+        _inventory[1] = new DrinkItem("Pepsi", 20, 10, 500);
+        _inventory[2] = new SnackItem("Mr Chips", 30, 10, 160);
+        _inventory[3] = new SnackItem("Nova", 40, 10, 180);
+        _inventory[4] = new MiscItem("Bandage", 5, 10);
+        _inventory[5] = new MiscItem("Eco-bag", 20, 10);
     }
 
     public void ShowInventory()
     {
-
+        Console.WriteLine("Eco-Matic");
+        Console.WriteLine("------------------------------------");
+        for (int i = 0; i < _itemCount; i++)
+        {
+            Console.WriteLine($"[{i + 1}] {_inventory[i].GetDisplayInfo()}");
+        }
+        Console.WriteLine("------------------------------------");
     }
-    
+
     public void Purchase()
     {
+        Console.Clear();
+        ShowInventory();
+        Console.WriteLine("What item would you like to buy? ");
+        Console.Write("Choice: ");
+        int choice;
+        while (!int.TryParse(Console.ReadLine(), out choice) || choice < 0 || choice > _itemCount)
+        {
+            Console.Write("Invalid Choice. Please try again (0 to exit): ");
+        }
+
+        if (choice == 0) return;
+        int itemChoice = choice - 1;
+
+        Console.WriteLine("")
 
     }
     
@@ -214,8 +245,8 @@ class Program
         while (true)
         {
             Console.Clear();
-            Console.WriteLine("==== Eco-Matic Vending Machine ====");
-            Console.WriteLine("\nMain Menu:");
+            Console.WriteLine("Eco-Matic Vending Machine");
+            Console.WriteLine("Main Menu:");
             Console.WriteLine("1. Buy");
             Console.WriteLine("2. Admin");
             Console.WriteLine("3. Exit");
@@ -246,10 +277,10 @@ class Program
         while (true)
         {
             Console.Clear();
-            Console.WriteLine("==== Customer Mode ====");
+            Console.WriteLine("Customer Mode");
             ecoMatic.ShowInventory();
             Console.WriteLine($"Current Balance: ₱{ecoMatic.CurrentBalance:F2}");
-            Console.WriteLine("\nCustomer Menu:");
+            Console.WriteLine("Customer Menu:");
             Console.WriteLine("1. Insert Money");
             Console.WriteLine("2. Select Item");
             Console.WriteLine("3. Examine Item");
@@ -287,7 +318,7 @@ class Program
     public static void AdminMenu(EcoMatic ecoMatic)
     {
         Console.Clear();
-        Console.WriteLine("==== Admin Mode ====");
+        Console.WriteLine("Admin Mode");
         Console.Write("Enter admin code: ");
         string code = Console.ReadLine() ?? "";
 
@@ -300,7 +331,7 @@ class Program
         while (true)
         {
             Console.Clear();
-            Console.WriteLine("==== Admin Menu ====");
+            Console.WriteLine(" Admin Menu ");
             Console.WriteLine("1. Restock Item");
             Console.WriteLine("2. Add Item");
             Console.WriteLine("3. Remove Item");

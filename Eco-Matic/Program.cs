@@ -8,7 +8,6 @@ class EcoMatic
 {
     private const int MaxItems = 6; // minumum should be 6
     
-    
     public double CurrentBalance { get; private set; }
 
     private VendingItem[] _inventory = new VendingItem[MaxItems];

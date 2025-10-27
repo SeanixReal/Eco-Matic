@@ -45,7 +45,8 @@ class EcoMatic
         if (CurrentBalance == 0)
         {
             Console.WriteLine("Please insert money first.");
-            Thread.Sleep(2000);
+            Console.WriteLine("Prease enter to continue.");
+            Console.ReadKey();
             return;
         }
 
@@ -54,7 +55,7 @@ class EcoMatic
         while (!int.TryParse(Console.ReadLine(), out itemNumber) || itemNumber < 0 || itemNumber > _itemCount)
         {
             Console.WriteLine("Invalid input. Please try again.");
-            Console.Write($"Enter item number (1-{MaxItems}, or 0 to cancel): ");
+            Console.Write($"Enter item number (0 to cancel): ");
         }
 
         if (itemNumber == 0) return;
@@ -103,7 +104,7 @@ class EcoMatic
         while (!int.TryParse(Console.ReadLine(), out choice) || choice < 0 || choice > _recycledItems.Length)
         {
             Console.WriteLine("Invalid input. Please try again.");
-            Console.Write($"Select item type (1-{_recycledItems.Length}, or 0 to cancel): ");
+            Console.Write($"Select item type (0 to cancel): ");
         }
 
         if (choice == 0) return;
@@ -136,7 +137,7 @@ class EcoMatic
         while (!int.TryParse(Console.ReadLine(), out itemNumber) || itemNumber < 0 || itemNumber > MaxItems)
         {
             Console.WriteLine("Invalid input. Please try again.");
-            Console.Write($"Enter item number (1-{MaxItems}, or 0 to cancel): ");
+            Console.Write($"Enter item number (0 to cancel): ");
         }
         
         if (itemNumber == 0) return;
@@ -160,7 +161,7 @@ class EcoMatic
         while (!double.TryParse(Console.ReadLine(), out amount) || (amount != 0 && (amount < 5 || amount > 100)))
         {
             Console.WriteLine("Invalid amount. Please enter ₱5-₱100.");
-            Console.Write("Amount (or 0 to cancel): ");
+            Console.Write("Amount (0 to cancel): ");
         }
         
         if (amount == 0) return;
@@ -196,7 +197,7 @@ class EcoMatic
         while (!int.TryParse(Console.ReadLine(), out itemNumber) || itemNumber < 0 || itemNumber > _itemCount)
         {
             Console.WriteLine("Invalid input. Please try again.");
-            Console.Write($"Enter item number (1-{_itemCount}, or 0 to cancel): ");
+            Console.Write($"Enter item number (0 to cancel): ");
         }
 
         if (itemNumber == 0) return;
@@ -212,6 +213,19 @@ class EcoMatic
             Console.Write("Quantity: ");
         }
 
+        int newStock = itemToRestock.ItemStock + quantity;
+        if (newStock > 10)
+        {
+            quantity = 10 - itemToRestock.ItemStock;
+            if (quantity <= 0)
+            {
+                Console.WriteLine($"Cannot restock {itemToRestock.ItemName}. Stock is already at maximum (10).");
+                Console.WriteLine("Press Enter to continue.");
+                Console.ReadLine();
+                return;
+            }
+            Console.WriteLine($"Only {quantity} units can be added to reach the max stock of 10.");
+        }
         itemToRestock.ItemStock += quantity;
         Console.WriteLine($"{quantity} units added to {itemToRestock.ItemName}. New stock: {itemToRestock.ItemStock}");
 
@@ -243,12 +257,12 @@ class EcoMatic
             Console.Write("Price: ");
         }
 
-        Console.Write("Enter item stock: ");
+        Console.Write("Enter item stock (max 10): ");
         int stock;
-        while (!int.TryParse(Console.ReadLine(), out stock) || stock < 0)
+        while (!int.TryParse(Console.ReadLine(), out stock) || stock < 0 || stock > 10)
         {
-            Console.WriteLine("Invalid stock. Please enter a non-negative number.");
-            Console.Write("Stock: ");
+            Console.WriteLine("Invalid stock. Please enter a non-negative number up to 10.");
+            Console.Write("Stock (max 10): ");
         }
 
         Console.WriteLine("Select item type:");
@@ -263,7 +277,8 @@ class EcoMatic
             Console.Write("Choice: ");
         }
 
-        VendingItem newItem = null;
+        VendingItem newItem;
+
         switch (typeChoice)
         {
             case 1:
@@ -289,18 +304,16 @@ class EcoMatic
             case 3:
                 newItem = new MiscItem(name, price, stock);
                 break;
+            default:
+                Console.WriteLine("Unknown item type. Cannot add item.");
+                Console.WriteLine("Press Enter to continue.");
+                Console.ReadLine();
+                return;
         }
 
-        if (newItem != null)
-        {
-            _inventory[_itemCount] = newItem;
-            _itemCount++;
-            Console.WriteLine($"{newItem.ItemName} added to inventory.");
-        }
-        else
-        {
-            Console.WriteLine("Failed to add item.");
-        }
+        _inventory[_itemCount] = newItem;
+        _itemCount++;
+        Console.WriteLine($"{newItem.ItemName} added to inventory.");
 
         Console.WriteLine("Press Enter to continue.");
         Console.ReadLine();
@@ -316,7 +329,7 @@ class EcoMatic
         while (!int.TryParse(Console.ReadLine(), out itemNumber) || itemNumber < 0 || itemNumber > _itemCount)
         {
             Console.WriteLine("Invalid input. Please try again.");
-            Console.Write($"Enter item number (1-{_itemCount}, or 0 to cancel): ");
+            Console.Write($"Enter item number (0 to cancel): ");
         }
 
         if (itemNumber == 0) return;
@@ -328,6 +341,7 @@ class EcoMatic
         {
             _inventory[i] = _inventory[i + 1];
         }
+    
         _inventory[_itemCount - 1] = null;
         _itemCount--;
 
@@ -457,7 +471,7 @@ class MiscItem : VendingItem
 
     public override string GetExamineMessage()
     {
-        return $"A simple, reusable item designed to support eco-conscious living.";
+        return $"A useful {ItemName}. This item can be used for various purposes.";
     }
 }
 
@@ -484,7 +498,7 @@ class Program
         while (true)
         {
             Console.Clear();
-            Console.WriteLine("==== Eco-Matic Vending Machine ====");
+            Console.WriteLine("Eco-Matic Vending Machine");
             Console.WriteLine("\nMain Menu:");
             Console.WriteLine("1. Buy");
             Console.WriteLine("2. Admin");
@@ -516,7 +530,7 @@ class Program
         while (true)
         {
             Console.Clear();
-            Console.WriteLine("==== Customer Mode ====");
+            Console.WriteLine("Customer Mode");
             ecoMatic.ShowInventory();
             Console.WriteLine($"Current Balance: ₱{ecoMatic.CurrentBalance:F2}");
             Console.WriteLine("\nCustomer Menu:");
@@ -557,7 +571,7 @@ class Program
     public static void AdminMenu(EcoMatic ecoMatic)
     {
         Console.Clear();
-        Console.WriteLine("==== Admin Mode ====");
+        Console.WriteLine("Admin Mode");
         Console.Write("Enter admin code: ");
         string code = Console.ReadLine() ?? "";
 

@@ -5,14 +5,14 @@ using System.IO;
 
 class Program
 {
+
+
     public static void Main(string[] args)
     {
-        Console.Clear();
-        Console.Title = "Eco-Matic Vending Machine";
         // initialize ecoMatic instance with the fp for inventory and eventLog
         try
         {
-            EcoMatic ecoMatic = new EcoMatic("inventory.csv", "eventLog.csv", "data");
+            EcoMatic ecoMatic = new EcoMatic("inventory.csv", "eventLog.txt", "data");
 
             Write.DelayLine("Eco-Matic is still in early developent");
 
@@ -29,42 +29,7 @@ class Program
 
     public static void MainMenu()
     {
-        while (true)
-        {
-            Console.Clear();
-            Console.WriteLine("Main Menu");
-            Console.WriteLine("1. Customer");
-            Console.WriteLine("2. Admin");
-            Console.WriteLine("3. Exit");
-            Console.Write("\nChoice: ");
-
-            string choice = Console.ReadLine() ?? "";
-            switch (choice)
-            {
-                case "1":
-                    CustomerMenu();
-                    break;
-                case "2":
-                    AdminMenu();
-                    break;
-                case "3":
-                    Write.DelayLine("Thank you for using Eco-Matic Vending Machine");
-                    Write.DelayLine("Have a great and awesome day!");
-                    Write.DelayLoad("Exiting");
-                    return;
-            }
-        }
-
-    }
-
-    public static void CustomerMenu()
-    {
-        Write.DelayLoad("Still in development");
-    }
-
-    public static void AdminMenu()
-    {
-        Write.DelayLoad("Still in development");
+        throw new Exception("Test");
     }
 
 }
@@ -102,8 +67,8 @@ class EcoMatic
     public const int MaxStocks = 10;
 
     //files and directories
-    private string _inventoryFileName;
-    private string _eventLogFileName;
+    private string _inventoryName;
+    private string _eventLogName;
     private string _dataDirectory;
 
     //initialize inventory of type vendingitem to contain its different kinds (snacks, drinks, misc)
@@ -115,17 +80,14 @@ class EcoMatic
     public EcoMatic(string inventoryName, string eventLogName, string directoryFP)
     {
         // initialize inventory and event log and directory
-        _inventoryFileName = inventoryName;
-        _eventLogFileName = eventLogName;
+        _inventoryName = inventoryName;
+        _eventLogName = eventLogName;
         _dataDirectory = directoryFP;
 
         // runs a check on directory data
         // runs a check on both files before running program to prevent errors
         CheckDirectory();
         CheckFiles();
-
-        //load inventory file into local _inventory 
-        LoadInventory();
     }
 
     private void CheckFiles()
@@ -147,12 +109,12 @@ class EcoMatic
     // check for inventory validity  
     private void CheckInventoryFile()
     {
-        string filePath = Path.Combine(_dataDirectory, _inventoryFileName);
+        string filePath = $"{_dataDirectory}/{_inventoryName}";
 
         if (!File.Exists(filePath))
         {
-            Write.DelayLine($"{_inventoryFileName} file doesn't exist.");
-            Write.DelayLoad($"Creating new {_inventoryFileName} file");
+            Write.DelayLine($"{_inventoryName} file doesn't exist.");
+            Write.DelayLoad($"Creating new {_inventoryName} file");
             CreateDefaultInventoryFile();
             return;
         }
@@ -162,8 +124,8 @@ class EcoMatic
         int length = lines.Length;
         if (lines[0] != "Type,Name,Price,Stock,Calories/Volume" || length <= 1)
         {
-            Write.DelayLine($"Something is wrong with {_inventoryFileName}");
-            Write.DelayLoad($"Fixing {_inventoryFileName}");
+            Write.DelayLine("Something is wrong with the inventory.csv");
+            Write.DelayLoad($"Fixing {_inventoryName}");
             CreateDefaultInventoryFile();
             return;
         }
@@ -195,17 +157,18 @@ class EcoMatic
             catch (FormatException)
             {
                 Write.DelayLine($"Abnormalities found on line {i + 1}");
-                Write.DelayLoad($"Creating new {_inventoryFileName} file");
+                Write.DelayLoad($"Creating new {_inventoryName} file");
                 CreateDefaultInventoryFile();
                 return;
             }
         }
+        
     }
 
     // defualt inventory
     private void CreateDefaultInventoryFile()
     {
-        string filePath = Path.Combine(_dataDirectory, _inventoryFileName);
+        string filePath = $"{_dataDirectory}/{_inventoryName}";
         using (StreamWriter w = new StreamWriter(filePath))
         {
             w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
@@ -221,96 +184,14 @@ class EcoMatic
     // load inventory file into local inventory
     private void LoadInventory()
     {
-        string filePath = Path.Combine(_dataDirectory, _inventoryFileName);
+        string filePath = $"{_dataDirectory}/{_inventoryName}";
         string[] lines = File.ReadAllLines(filePath);
         int length = lines.Length;
-        // inventory.csv to _inventory
-        for (int i = 1; i < length; i++)
-        {
-            string[] parts = lines[i].Split(',');
-
-            string itemType = parts[0].Trim().ToLower();
-            string itemName = parts[1];
-            decimal itemPrice = decimal.Parse(parts[2]);
-            int itemStock = int.Parse(parts[3]);
-
-            if (itemType == "snack")
-            {
-                double calories = double.Parse(parts[4]);
-                _inventory[_itemCount++] = new SnackItem(itemName, itemPrice, itemStock, calories);
-            }
-            else if (itemType == "drink")
-            {
-                double volume = double.Parse(parts[4]);
-                _inventory[_itemCount++] = new DrinkItem(itemName, itemPrice, itemStock, volume);
-            }
-            else if (itemType == "misc")
-            {
-                _inventory[_itemCount++] = new MiscItem(itemName, itemPrice, itemStock);
-            }
-            else
-            {
-                throw new Exception($"Something is wrong with the {_inventoryFileName}. Please rerun program to fix.");
-            }
-        }
-    }
-
-    //update inventory
-    private void UpdateInventory()
-    {
-        string filePath = Path.Combine(_dataDirectory, _inventoryFileName);
-        try
-        {
-            using (StreamWriter w = new StreamWriter(filePath))
-            {
-                w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
-
-                // _inventory to inventory.csv
-                for (int i = 0; i < _itemCount; i++)
-                {
-                    w.WriteLine(_inventory[i].ToCsvLine());
-                }
-            }
-
-            Write.DelayLine($"{_inventoryFileName} updated succesfully.");
-        }
-        catch (Exception ex)
-        {
-            Write.DelayLine("Error updating inventory. " + ex.Message);
-        }
-       
     }
 
     private void CheckEventLogFile()
     {
-        string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
-
-        if (!File.Exists(filePath))
-        {
-            Write.DelayLine($"{_eventLogFileName} file doesn't exist.");
-            Write.DelayLoad($"Creating new {_eventLogFileName} file");
-            CreateDefaultEventLogFile();
-            return;
-        }
-
-        string[] lines = File.ReadAllLines(filePath);
-
-        if (lines.Length == 0 || lines[0] != "Timestamp,Type,ItemName,UnitPrice,Details")
-        {
-            Write.DelayLine($"Something is wrong with {_eventLogFileName}");
-            Write.DelayLoad($"Fixing {_eventLogFileName}");
-            CreateDefaultEventLogFile();
-            return;
-        }
-    }
-
-    private void CreateDefaultEventLogFile()
-    {
-        string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
-        using (StreamWriter w = new StreamWriter(filePath))
-        {
-            w.WriteLine("Timestamp,Type,ItemName,UnitPrice,Details");
-        }
+        
     }
 }
 
@@ -334,13 +215,12 @@ abstract class VendingItem
     protected VendingItem(string itemName, decimal itemPrice, int itemStock)
     {
         ItemName = itemName;
-        ItemPrice = itemPrice;
+        ItemPrice = ItemPrice;
         ItemStock = itemStock;
     }
 
     public abstract string GetDispenseMessage();
     public abstract string GetExamineMessage();
-    public abstract string ToCsvLine();
 }
 
 class SnackItem : VendingItem, IHasCalories
@@ -360,11 +240,6 @@ class SnackItem : VendingItem, IHasCalories
     public override string GetExamineMessage()
     {
         return $"A tasty {ItemName} with {Calories}kcal worth of deliciousness.";
-    }
-
-    public override string ToCsvLine()
-    {
-        return $"Snack,{ItemName},{ItemPrice},{ItemStock},{Calories}";
     }
 }
 
@@ -386,11 +261,6 @@ class DrinkItem : VendingItem, IHasVolume
     {
         return $"A cold {ItemName} with {Volume}ml of sweetness";
     }
-
-    public override string ToCsvLine()
-    {
-        return $"Drink,{ItemName},{ItemPrice},{ItemStock},{Volume}";
-    }
 }
 
 class MiscItem : VendingItem
@@ -405,11 +275,6 @@ class MiscItem : VendingItem
     public override string GetExamineMessage()
     {
         return $"A useful {ItemName}";
-    }
-
-    public override string ToCsvLine()
-    {
-        return $"Misc,{ItemName},{ItemPrice},{ItemStock},";
     }
 }
 

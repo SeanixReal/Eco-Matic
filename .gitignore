@@ -7,7 +7,7 @@ eco-matic/data
 
 # dotenv files
 .env
-.github
+
 # User-specific files
 *.rsuser
 *.suo

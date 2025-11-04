@@ -274,13 +274,33 @@ class EcoMatic
 
             Write.DelayLine($"{_inventoryFileName} updated succesfully.");
         }
-        catch (Exception ex)
+        catch (IOException ex)
         {
             Write.DelayLine("Error updating inventory. " + ex.Message);
         }
-       
     }
 
+    // log event to be added to eventlog csv
+    private void LogEvent(string eventType, string action, string itemName, decimal unitPrice, int quantity, string details)
+    {
+        string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
+        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+        string logLine = $"{timestamp},{eventType},{action},{itemName},{unitPrice},{quantity},{details}";
+
+        try
+        {
+            using (StreamWriter w = new StreamWriter(filePath, true))
+            {
+                w.WriteLine(logLine);
+            }
+        }
+        catch (IOException ex)
+        {
+            Write.DelayLine("Error logging event. " + ex.Message);
+        }
+    }
+
+    // checks even log file for errors
     private void CheckEventLogFile()
     {
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
@@ -295,7 +315,7 @@ class EcoMatic
 
         string[] lines = File.ReadAllLines(filePath);
 
-        if (lines.Length == 0 || lines[0] != "Timestamp,Type,ItemName,UnitPrice,Details")
+        if (lines.Length == 0 || lines[0] != "Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,Details")
         {
             Write.DelayLine($"Something is wrong with {_eventLogFileName}");
             Write.DelayLoad($"Fixing {_eventLogFileName}");
@@ -304,12 +324,13 @@ class EcoMatic
         }
     }
 
+    // make default event log 
     private void CreateDefaultEventLogFile()
     {
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
         using (StreamWriter w = new StreamWriter(filePath))
         {
-            w.WriteLine("Timestamp,Type,ItemName,UnitPrice,Details");
+            w.WriteLine("Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,Details");
         }
     }
 }

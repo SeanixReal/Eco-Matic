@@ -18,16 +18,16 @@ class Program
 
             Write.DelayLoad("Loading");
 
-            MainMenu();
+            MainMenu(ecoMatic);
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Oopsie... Something went wrong: " + ex.Message);
+            Console.WriteLine("Oopsie... Something went wrong. " + ex.Message);
             return;
         }
     }
 
-    public static void MainMenu()
+    public static void MainMenu(EcoMatic ecoMatic)
     {
         while (true)
         {
@@ -42,10 +42,10 @@ class Program
             switch (choice)
             {
                 case "1":
-                    CustomerMenu();
+                    CustomerMenu(ecoMatic);
                     break;
                 case "2":
-                    AdminMenu();
+                    AdminMenu(ecoMatic);
                     break;
                 case "3":
                     Write.DelayLine("Thank you for using Eco-Matic Vending Machine");
@@ -57,12 +57,12 @@ class Program
 
     }
 
-    public static void CustomerMenu()
+    public static void CustomerMenu(EcoMatic ecoMatic)
     {
         Write.DelayLoad("Still in development");
     }
 
-    public static void AdminMenu()
+    public static void AdminMenu(EcoMatic ecoMatic)
     {
         Write.DelayLoad("Still in development");
     }

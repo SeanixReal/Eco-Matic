@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Threading;
 using System.IO;
+using Spectre.Console;
+using System.Runtime.InteropServices;
 
 class Program
 {
@@ -59,7 +61,9 @@ class Program
 
     public static void CustomerMenu(EcoMatic ecoMatic)
     {
-        Write.DelayLoad("Still in development");
+        ecoMatic.ShowInventory();
+        Console.WriteLine("Press any key to continue...");
+        Console.ReadKey();
     }
 
     public static void AdminMenu(EcoMatic ecoMatic)
@@ -109,8 +113,7 @@ class EcoMatic
     //initialize inventory of type vendingitem to contain its different kinds (snacks, drinks, misc)
     private VendingItem[] _inventory = new VendingItem[MaxItems];
     private int _itemCount = 0;
-
-
+    private decimal _currentBalance = 0;
 
     public EcoMatic(string inventoryName, string eventLogName, string directoryFP)
     {
@@ -128,12 +131,67 @@ class EcoMatic
         LoadInventory();
     }
 
+    // customer methods
+
+    //show inventory in a table using nuget package spectre console
+    public void ShowInventory()
+    {
+        Console.Clear();
+
+        // create format of table
+        Table table = new Table();
+        table.Border = TableBorder.Rounded;
+        table.BorderColor(Color.Green);
+        table.Title = new TableTitle("[bold green]╔═══ ECO-MATIC VENDING MACHINE ═══╗[/]");
+        table.AddColumn(new TableColumn("[bold yellow]ID[/]").Centered());
+        table.AddColumn(new TableColumn("[bold yellow]Item[/]").LeftAligned());
+        table.AddColumn(new TableColumn("[bold yellow]Price[/]").Centered());
+        table.AddColumn(new TableColumn("[bold yellow]Stock[/]").Centered());
+
+        // set up the data to the table to be printed  after
+        for (int i = 0; i < _itemCount; i++)
+        {
+            VendingItem item = _inventory[i];
+            
+            string stockIndicator;
+            if (item.ItemStock == 0)
+            {
+                stockIndicator = "[red]NO STOCK[/]";
+            }
+            else if (item.ItemStock <= 3)
+            {
+                stockIndicator = "[red]●[/]";
+            }
+            else if (item.ItemStock <= 6)
+            {
+                stockIndicator = "[yellow]● ●[/]";
+            }
+            else
+            {
+                stockIndicator = "[green]● ● ●[/]";
+            }
+            
+            table.AddRow(
+                $"[cyan]{i + 1}[/]", // item num
+                $"[bold]{item.ItemName}[/]", // name
+                $"[green]₱{item.ItemPrice:F2}[/]", //price
+                stockIndicator // stock indicator string 
+            );
+        }
+
+        AnsiConsole.Write(table);
+        
+        AnsiConsole.MarkupLine($"\n[bold green]Current Balance: ₱{_currentBalance}[/]");
+    }
+
+    //wrapper
     private void CheckFiles()
     {
         CheckInventoryFile();
         CheckEventLogFile();
     }
-
+    
+    // checks directory validity
     public void CheckDirectory()
     {
         if (!Directory.Exists(_dataDirectory))

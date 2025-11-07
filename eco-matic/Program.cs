@@ -194,12 +194,20 @@ class EcoMatic
     // checks directory validity
     public void CheckDirectory()
     {
-        if (!Directory.Exists(_dataDirectory))
+        try
         {
-            Write.DelayLine($"Directory {_dataDirectory} doesn't exist");
-            Write.DelayLoad($"Creating new {_dataDirectory} directory");
-            Directory.CreateDirectory(_dataDirectory);
+            if (!Directory.Exists(_dataDirectory))
+            {
+                Write.DelayLine($"Directory {_dataDirectory} doesn't exist");
+                Write.DelayLoad($"Creating new {_dataDirectory} directory");
+                Directory.CreateDirectory(_dataDirectory);
+            }
         }
+        catch (IOException ex)
+        {
+            Write.DelayLine("Error checking directory. " + ex.Message);
+        }
+        
     }
 
     // check for inventory validity  
@@ -263,17 +271,25 @@ class EcoMatic
     // defualt inventory
     private void CreateDefaultInventoryFile()
     {
-        string filePath = Path.Combine(_dataDirectory, _inventoryFileName);
-        using (StreamWriter w = new StreamWriter(filePath))
+        try
         {
-            w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
-            w.WriteLine("Snack,Mr Chips,30.50,10,160");
-            w.WriteLine("Snack,Nova,40,10,180");
-            w.WriteLine("Drink,Coca Cola,30.50,10,500");
-            w.WriteLine("Drink,Pepsi,30,10,500");
-            w.WriteLine("Misc,Bandaid Box,20,10,");
-            w.WriteLine("Misc,Eco Bag,30.75,10,");
+            string filePath = Path.Combine(_dataDirectory, _inventoryFileName);
+            using (StreamWriter w = new StreamWriter(filePath))
+            {
+                w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
+                w.WriteLine("Snack,Mr Chips,30.50,10,160");
+                w.WriteLine("Snack,Nova,40,10,180");
+                w.WriteLine("Drink,Coca Cola,30.50,10,500");
+                w.WriteLine("Drink,Pepsi,30,10,500");
+                w.WriteLine("Misc,Bandaid Box,20,10,");
+                w.WriteLine("Misc,Eco Bag,30.75,10,");
+            }
         }
+        catch (IOException ex)
+        {
+            Write.DelayLine("Error updating inventory. " + ex.Message);
+        }
+        
     }
 
     // load inventory file into local inventory

@@ -54,7 +54,7 @@ class Program
                     Write.DelayLoad("Exiting");
                     return;
                 default:
-                    Write.DelayLoad("Invalid Input. Please try again", 300);
+                    Write.DelayLoad("Invalid Input. Please try again");
                     break;
             }
         }
@@ -79,6 +79,25 @@ class Program
             switch (choice)
             {
                 case "1":
+                    // show acceptable bills
+                    Console.WriteLine("Eco-Matic only accepts the following bills:");
+                    foreach (decimal amount in ecoMatic.ValidMoneyAmount)
+                    {
+                        Console.Write($"₱{amount} ");
+                    }
+                    Console.WriteLine();
+
+                    while (true)
+                    {
+                        decimal money = PromptForDecimal("Please enter the amount to insert (₱): ");
+                        if (money == 0) break;
+                        if (ecoMatic.InsertMoney(money))
+                        {
+                            Write.DelayLine($"Successfully inserted ₱{money:F2}. New balance: ₱{ecoMatic.CurrentBalance:F2}");
+                            break;
+                        }
+                        Console.WriteLine("Invalid bill. Please insert one of the accepted bills. (0 to exit)");
+                    }
                     break;
                 case "2":
                     break;
@@ -103,24 +122,34 @@ class Program
 
 
     // helper methods
+    public static decimal PromptForDecimal(string message)
+    {
+        decimal input;
+        Console.Write(message);
+        while (!decimal.TryParse(Console.ReadLine(), out input))
+        {
+            Console.Write("Invalid Input. Please input a number: ");
+        }
+        return input;
+    }
 }
 
 // helper class so i have fewer lines of code when using thread sleep
 class Write
 {
-    public static void DelayLine(string message, int delay = 1000)
+    public static void DelayLine(string message, int delay = 500)
     {
         Console.WriteLine(message);
         Thread.Sleep(delay);
     }
 
-    public static void Delay(string message, int delay = 1000)
+    public static void Delay(string message, int delay = 500)
     {
         Console.Write(message);
         Thread.Sleep(delay);
     }
 
-    public static void DelayLoad(string message, int delay = 1000)
+    public static void DelayLoad(string message, int delay = 300)
     {
         Write.Delay(message, delay);
         for (int i = 0; i < 3; i++)
@@ -147,7 +176,8 @@ class EcoMatic
     //initialize inventory of type vendingitem to contain its different kinds (snacks, drinks, misc)
     private VendingItem[] _inventory = new VendingItem[MaxItems];
     private int _itemCount = 0;
-    private decimal _currentBalance = 0;
+    public decimal CurrentBalance { get; private set; } = 0;
+    public decimal[] ValidMoneyAmount = new decimal[] { 20, 50, 100, 200, 500, 1000 };
 
     public EcoMatic(string inventoryName, string eventLogName, string directoryFP)
     {
@@ -167,6 +197,15 @@ class EcoMatic
 
     // customer methods
 
+    // insert money
+    public bool InsertMoney(decimal amount)
+    {
+        // if amount is not inside validamount array
+        if (!ValidMoneyAmount.Contains(amount)) return false;
+        CurrentBalance += amount;
+        LogEvent("PAYMENT", "Insert", "Cash", amount, 0, $"Balance:{CurrentBalance}");
+        return true;
+    }
     //show inventory in a table using nuget package spectre console
     public void ShowInventory()
     {
@@ -215,7 +254,7 @@ class EcoMatic
 
         AnsiConsole.Write(table);
         
-        AnsiConsole.MarkupLine($"\n[bold green]Current Balance: ₱{_currentBalance}[/]");
+        AnsiConsole.MarkupLine($"\n[bold green]Current Balance: ₱{CurrentBalance}[/]");
     }
 
     //wrapper

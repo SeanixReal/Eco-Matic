@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.IO;
 using Spectre.Console;
-using System.Runtime.InteropServices;
 
 class Program
 {
@@ -104,6 +103,8 @@ class EcoMatic
     //min 6
     public const int MaxItems = 6;
     public const int MaxStocks = 10;
+    private const string InventoryHeader = "Type,Name,Price,Stock,Calories/Volume";
+    private const string EventLogHeader = "Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,Details";
 
     //files and directories
     private string _inventoryFileName;
@@ -226,7 +227,7 @@ class EcoMatic
         // check header if correct
         string[] lines = File.ReadAllLines(filePath);
         int length = lines.Length;
-        if (lines[0] != "Type,Name,Price,Stock,Calories/Volume" || length <= 1)
+        if (lines[0] != InventoryHeader || length <= 1)
         {
             Write.DelayLine($"Something is wrong with {_inventoryFileName}");
             Write.DelayLoad($"Fixing {_inventoryFileName}");
@@ -276,7 +277,7 @@ class EcoMatic
             string filePath = Path.Combine(_dataDirectory, _inventoryFileName);
             using (StreamWriter w = new StreamWriter(filePath))
             {
-                w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
+                w.WriteLine(InventoryHeader);
                 w.WriteLine("Snack,Mr Chips,30.50,10,160");
                 w.WriteLine("Snack,Nova,40,10,180");
                 w.WriteLine("Drink,Coca Cola,30.50,10,500");
@@ -337,7 +338,7 @@ class EcoMatic
         {
             using (StreamWriter w = new StreamWriter(filePath))
             {
-                w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
+                w.WriteLine(InventoryHeader);
 
                 // _inventory to inventory.csv
                 for (int i = 0; i < _itemCount; i++)
@@ -389,7 +390,7 @@ class EcoMatic
 
         string[] lines = File.ReadAllLines(filePath);
 
-        if (lines.Length == 0 || lines[0] != "Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,Details")
+        if (lines.Length == 0 || lines[0] != EventLogHeader)
         {
             Write.DelayLine($"Something is wrong with {_eventLogFileName}");
             Write.DelayLoad($"Fixing {_eventLogFileName}");
@@ -404,7 +405,7 @@ class EcoMatic
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
         using (StreamWriter w = new StreamWriter(filePath))
         {
-            w.WriteLine("Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,Details");
+            w.WriteLine(EventLogHeader);
         }
     }
 }

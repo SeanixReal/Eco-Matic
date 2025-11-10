@@ -53,6 +53,9 @@ class Program
                     Write.DelayLine("Have a great and awesome day!");
                     Write.DelayLoad("Exiting");
                     return;
+                default:
+                    Write.DelayLoad("Invalid Input. Please try again", 300);
+                    break;
             }
         }
 
@@ -60,9 +63,37 @@ class Program
 
     public static void CustomerMenu(EcoMatic ecoMatic)
     {
-        ecoMatic.ShowInventory();
-        Console.WriteLine("Press any key to continue...");
-        Console.ReadKey();
+        while(true)
+        {
+            Console.Clear();
+            ecoMatic.ShowInventory();
+
+            Console.WriteLine("1. Insert Money");
+            Console.WriteLine("2. Select Item");
+            Console.WriteLine("3. Examine Item");
+            Console.WriteLine("4. Recycle for Credit");
+            Console.WriteLine("5. Get Change and Return");
+            Console.Write("\nChoice: ");
+
+            string choice = Console.ReadLine() ?? "";
+            switch (choice)
+            {
+                case "1":
+                    break;
+                case "2":
+                    break;
+                case "3":
+                    break;
+                case "4":
+                    break;
+                case "5":
+                    return;
+                default:
+                    Write.DelayLoad("Invalid Input. Please try again", 300);
+                    break;
+            }
+
+        }
     }
 
     public static void AdminMenu(EcoMatic ecoMatic)
@@ -70,6 +101,8 @@ class Program
         Write.DelayLoad("Still in development");
     }
 
+
+    // helper methods
 }
 
 // helper class so i have fewer lines of code when using thread sleep
@@ -89,10 +122,10 @@ class Write
 
     public static void DelayLoad(string message, int delay = 1000)
     {
-        Write.Delay(message);
+        Write.Delay(message, delay);
         for (int i = 0; i < 3; i++)
         {
-            Write.Delay(".", 500);
+            Write.Delay(".", 300);
         }
         Console.Write("\n");
     }

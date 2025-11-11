@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.IO;
 using Spectre.Console;
-using System.Runtime.InteropServices;
 
 class Program
 {
@@ -24,7 +23,7 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Oopsie... Something went wrong. " + ex.Message);
+            Write.Error("Oopsie... Something went wrong. " + ex.Message);
             return;
         }
     }
@@ -61,9 +60,40 @@ class Program
 
     public static void CustomerMenu(EcoMatic ecoMatic)
     {
-        ecoMatic.ShowInventory();
-        Console.WriteLine("Press any key to continue...");
-        Console.ReadKey();
+        while(true)
+        {
+            ecoMatic.ShowInventory();
+            Console.WriteLine("\n1. Insert Money");
+            Console.WriteLine("2. Buy Item");
+            Console.WriteLine("3. Examine Item");
+            Console.WriteLine("4. Recycle Item");
+            Console.WriteLine("5. Get Change and Return");
+            Console.Write("Choice: ");
+            string choice = Console.ReadLine() ?? "";
+
+            switch (choice)
+            {
+                case "1":
+                    CustomerInsertMoneyMenu(ecoMatic);
+                    break;
+                case "2":
+                    CustomerBuyMenu(ecoMatic);
+                    break;
+                case "3":
+                    // CustomerExamineMenu(ecoMatic);
+                    break;
+                case "4":
+                    // CustomerRecycleMenu(ecoMatic);
+                    break;
+                case "5":
+                    // CustomerChangeMenu(ecoMatic);
+                    return;
+                default:
+                    Write.Error("Invalid Input");
+                    break;
+            }
+        }
+        
     }
 
     public static void AdminMenu(EcoMatic ecoMatic)
@@ -71,24 +101,62 @@ class Program
         Write.DelayLoad("Still in development");
     }
 
+    // customer menu methods
+    public static void CustomerInsertMoneyMenu(EcoMatic ecoMatic)
+    {
+        Console.WriteLine("\nAccepted bills by the eco-matic:");
+        foreach (decimal bill in ecoMatic.AcceptedBills)
+        {
+            AnsiConsole.Markup($"[green]₱{bill} [/]");
+        }
+        Console.WriteLine();
+
+        Console.Write("Enter bill amount to insert: ₱");
+        string input = Console.ReadLine() ?? "";
+        if (decimal.TryParse(input, out decimal amount))
+        {
+            ecoMatic.InsertMoney(amount);
+        }
+        else
+        {
+            Write.Error("Invalid input.");
+        }
+    }
+
+    public static void CustomerBuyMenu(EcoMatic ecoMatic)
+    {
+        Console.WriteLine("Which item would you like to buy? ");
+        Console.Write("Input item ID: ");
+        string input = Console.ReadLine() ?? "";
+        if (int.TryParse(input, out int id))
+        {
+            ecoMatic.BuyItem(id);
+        }
+        else
+        {
+            Write.Error("Invalid input.");
+        }
+    }
+    
+
 }
 
 // helper class so i have fewer lines of code when using thread sleep
 class Write
 {
-    public static void DelayLine(string message, int delay = 1000)
+    public static void DelayLine(string message, int delay = 300)
     {
         Console.WriteLine(message);
         Thread.Sleep(delay);
     }
 
-    public static void Delay(string message, int delay = 1000)
+    public static void Delay(string message, int delay = 300)
     {
         Console.Write(message);
         Thread.Sleep(delay);
     }
 
-    public static void DelayLoad(string message, int delay = 1000)
+    public static void DelayLoad(string message, int delay = 300)
     {
         Write.Delay(message);
         for (int i = 0; i < 3; i++)
@@ -96,6 +164,24 @@ class Write
             Write.Delay(".", 500);
         }
         Console.Write("\n");
+    }
+    
+    public static void Warning(string message, int delay = 1000)
+    {
+        AnsiConsole.MarkupLine("[yellow][[WARNING]][/] " + message);
+        Thread.Sleep(delay);
+    }
+
+    public static void Error(string message, int delay = 1000)
+    {
+        AnsiConsole.MarkupLine("[red][[ERROR]][/] " + message);
+        Thread.Sleep(delay);
+    }
+
+    public static void Success(string message, int delay = 1000)
+    {
+        AnsiConsole.MarkupLine("[green][[SUCCESS]][/] " + message);
+        Thread.Sleep(delay);
     }
 }
 
@@ -113,7 +199,9 @@ class EcoMatic
     //initialize inventory of type vendingitem to contain its different kinds (snacks, drinks, misc)
     private VendingItem[] _inventory = new VendingItem[MaxItems];
     private int _itemCount = 0;
-    private decimal _currentBalance = 0;
+    
+    public decimal CurrentBalance { get; private set; }
+    public decimal[] AcceptedBills = new decimal[] { 20, 50, 100, 200, 500, 1000 };
 
     public EcoMatic(string inventoryName, string eventLogName, string directoryFP)
     {
@@ -132,7 +220,68 @@ class EcoMatic
     }
 
     // customer methods
+    // insert money
+    public void InsertMoney(decimal amount)
+    {
+        if (!AcceptedBills.Contains(amount))
+        {
+            Write.Error("Invalid bill amount.");
+            return;
+        }
+        CurrentBalance += amount;
+        LogEvent("TRANSACTION", "INSERT_MONEY", "", 0, 1, 0, $"Inserted ₱{amount}. Current Balance: ₱{CurrentBalance}");
+        Write.Success($"₱{amount} inserted successfully.");
+    }
 
+    public void BuyItem(int id)
+    {
+        id--;
+        if (id < 0 || id >= _itemCount)
+        {
+            Write.Error("Invalid Range.");
+            return;
+        }
+
+        VendingItem item = _inventory[id];
+        int quantity = 0;
+        while(true)
+        {
+            if (item.ItemStock <= 0)
+            {
+                Write.Error($"Sorry, {item.ItemName} is out of stock.");
+                return;
+            }
+
+            if (CurrentBalance < item.ItemPrice)
+            {
+                Write.Error("Sorry, you don't have enough balance");
+                return;
+            }
+
+            Console.WriteLine(item.GetDispenseMessage());
+            Write.Success($"You have successfully received {item.ItemName}");
+            CurrentBalance -= item.ItemPrice;
+            quantity++;
+            Console.WriteLine("Would you like to buy again? (Y/N): ");
+            string choice = (Console.ReadLine() ?? "").ToLower();
+            if (choice != "y" && choice != "yes")
+            {
+                Write.DelayLoad("Thanks for using eco-matic! Returning");
+                decimal totalPrice = item.ItemPrice * quantity;
+                LogEvent("PURCHASE", "BUY_ITEM", item.ItemName, item.ItemPrice, quantity, totalPrice, $"Bought {quantity}x {item.ItemName}. Remaining Balance: ₱{CurrentBalance}");
+                item.ItemStock -= quantity;
+                UpdateInventory();
+                return;
+            }
+        }
+        
+        
+
+        
+
+
+
+    }
     //show inventory in a table using nuget package spectre console
     public void ShowInventory()
     {
@@ -181,7 +330,7 @@ class EcoMatic
 
         AnsiConsole.Write(table);
         
-        AnsiConsole.MarkupLine($"\n[bold green]Current Balance: ₱{_currentBalance}[/]");
+        AnsiConsole.MarkupLine($"[bold green]Current Balance: ₱{CurrentBalance:F2}[/]");
     }
 
     //wrapper
@@ -198,14 +347,14 @@ class EcoMatic
         {
             if (!Directory.Exists(_dataDirectory))
             {
-                Write.DelayLine($"Directory {_dataDirectory} doesn't exist");
+                Write.Warning($"Directory {_dataDirectory} doesn't exist");
                 Write.DelayLoad($"Creating new {_dataDirectory} directory");
                 Directory.CreateDirectory(_dataDirectory);
             }
         }
         catch (IOException ex)
         {
-            Write.DelayLine("Error checking directory. " + ex.Message);
+            Write.Error("Error checking directory. " + ex.Message);
         }
         
     }
@@ -217,7 +366,7 @@ class EcoMatic
 
         if (!File.Exists(filePath))
         {
-            Write.DelayLine($"{_inventoryFileName} file doesn't exist.");
+            Write.Warning($"{_inventoryFileName} file doesn't exist.");
             Write.DelayLoad($"Creating new {_inventoryFileName} file");
             CreateDefaultInventoryFile();
             return;
@@ -228,7 +377,7 @@ class EcoMatic
         int length = lines.Length;
         if (lines[0] != "Type,Name,Price,Stock,Calories/Volume" || length <= 1)
         {
-            Write.DelayLine($"Something is wrong with {_inventoryFileName}");
+            Write.Warning($"Something is wrong with {_inventoryFileName}");
             Write.DelayLoad($"Fixing {_inventoryFileName}");
             CreateDefaultInventoryFile();
             return;
@@ -260,7 +409,7 @@ class EcoMatic
             }
             catch (FormatException)
             {
-                Write.DelayLine($"Abnormalities found on line {i + 1}");
+                Write.Error($"Abnormalities found on line {i + 1}");
                 Write.DelayLoad($"Creating new {_inventoryFileName} file");
                 CreateDefaultInventoryFile();
                 return;
@@ -287,7 +436,7 @@ class EcoMatic
         }
         catch (IOException ex)
         {
-            Write.DelayLine("Error updating inventory. " + ex.Message);
+            Write.Error("Error updating inventory. " + ex.Message);
         }
         
     }
@@ -350,16 +499,16 @@ class EcoMatic
         }
         catch (IOException ex)
         {
-            Write.DelayLine("Error updating inventory. " + ex.Message);
+            Write.Error("Error updating inventory. " + ex.Message);
         }
     }
 
     // log event to be added to eventlog csv
-    private void LogEvent(string eventType, string action, string itemName, decimal unitPrice, int quantity, string details)
+    private void LogEvent(string eventType, string action, string itemName, decimal unitPrice, int quantity, decimal totalPrice, string details)
     {
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
         string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        string logLine = $"{timestamp},{eventType},{action},{itemName},{unitPrice},{quantity},{details}";
+        string logLine = $"{timestamp},{eventType},{action},{itemName},{unitPrice},{quantity},{totalPrice},{details}";
 
         try
         {
@@ -370,7 +519,7 @@ class EcoMatic
         }
         catch (IOException ex)
         {
-            Write.DelayLine("Error logging event. " + ex.Message);
+            Write.Error("Error logging event. " + ex.Message);
         }
     }
 
@@ -381,7 +530,7 @@ class EcoMatic
 
         if (!File.Exists(filePath))
         {
-            Write.DelayLine($"{_eventLogFileName} file doesn't exist.");
+            Write.Warning($"{_eventLogFileName} file doesn't exist.");
             Write.DelayLoad($"Creating new {_eventLogFileName} file");
             CreateDefaultEventLogFile();
             return;
@@ -389,9 +538,9 @@ class EcoMatic
 
         string[] lines = File.ReadAllLines(filePath);
 
-        if (lines.Length == 0 || lines[0] != "Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,Details")
+        if (lines.Length == 0 || lines[0] != "Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,TotalPrice,Details")
         {
-            Write.DelayLine($"Something is wrong with {_eventLogFileName}");
+            Write.Warning($"Something is wrong with {_eventLogFileName}");
             Write.DelayLoad($"Fixing {_eventLogFileName}");
             CreateDefaultEventLogFile();
             return;
@@ -404,7 +553,7 @@ class EcoMatic
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
         using (StreamWriter w = new StreamWriter(filePath))
         {
-            w.WriteLine("Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,Details");
+            w.WriteLine("Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,TotalPrice,Details");
         }
     }
 }
@@ -422,9 +571,9 @@ interface IHasCalories
 abstract class VendingItem
 {
     // private set so it can only be modified wihin the class
-    public string ItemName { get; private set; }
-    public decimal ItemPrice { get; private set; }
-    public int ItemStock { get; private set; }
+    public string ItemName { get; set; }
+    public decimal ItemPrice { get; set; }
+    public int ItemStock { get; set; }
 
     protected VendingItem(string itemName, decimal itemPrice, int itemStock)
     {

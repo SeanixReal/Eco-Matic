@@ -76,19 +76,19 @@ class Program
 // helper class so i have fewer lines of code when using thread sleep
 class Write
 {
-    public static void DelayLine(string message, int delay = 1000)
+    public static void DelayLine(string message, int delay = 300)
     {
         Console.WriteLine(message);
         Thread.Sleep(delay);
     }
 
-    public static void Delay(string message, int delay = 1000)
+    public static void Delay(string message, int delay = 300)
     {
         Console.Write(message);
         Thread.Sleep(delay);
     }
 
-    public static void DelayLoad(string message, int delay = 1000)
+    public static void DelayLoad(string message, int delay = 300)
     {
         Write.Delay(message);
         for (int i = 0; i < 3; i++)
@@ -184,7 +184,7 @@ class EcoMatic
         AnsiConsole.MarkupLine($"\n[bold green]Current Balance: ₱{_currentBalance}[/]");
     }
 
-    //wrapper
+    // File Handlings
     private void CheckFiles()
     {
         CheckInventoryFile();

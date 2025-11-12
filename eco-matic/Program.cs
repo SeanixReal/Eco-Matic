@@ -16,7 +16,7 @@ class Program
         {
             EcoMatic ecoMatic = new EcoMatic("inventory.csv", "eventLog.csv", "data");
 
-            Write.DelayLine("Eco-Matic is still in early developent");
+            Write.DelayLine("Eco-Matic is still in early development");
 
             Write.DelayLoad("Loading");
 
@@ -99,7 +99,163 @@ class Program
 
     public static void AdminMenu(EcoMatic ecoMatic)
     {
-        Write.DelayLoad("Still in development");
+        Console.Write("Enter Password: ");
+        string password = Console.ReadLine() ?? "";
+        if (password != "admin123")
+        {
+            Write.Error("Invalid Password.");
+            return;
+        }
+        while (true)
+        {
+            ecoMatic.ShowInventory();
+            Console.WriteLine("\n1. View Sales Report");
+            Console.WriteLine("2. Restock Item");
+            Console.WriteLine("3. Add Item");
+            Console.WriteLine("4. Remove Item");
+            Console.WriteLine("5. View Event Log");
+            Console.WriteLine("6. Clear Event Log");
+            Console.WriteLine("7. Exit Admin");
+            Console.Write("Choice: ");
+            string choice = Console.ReadLine() ?? "";
+
+            switch (choice)
+            {
+                case "1":
+                    AdminSalesReportMenu(ecoMatic);
+                    break;
+                case "2":
+                    AdminRestockMenu(ecoMatic);
+                    break;
+                case "3":
+                    AdminAddItemMenu(ecoMatic);
+                    break;
+                case "4":
+                    AdminRemoveItemMenu(ecoMatic);
+                    break;
+                case "5":
+                    AdminViewLogMenu(ecoMatic);
+                    break;
+                case "6":
+                    AdminClearLogMenu(ecoMatic);
+                    break;
+                case "7":
+                    return;
+                default:
+                    Write.Error("Invalid Input");
+                    break;
+            }
+        }
+    }
+
+    public static void AdminSalesReportMenu(EcoMatic ecoMatic)
+    {
+        ecoMatic.GenerateDailySalesReport();
+        Console.WriteLine("\nPress any key to continue...");
+        Console.ReadKey();
+    }
+    // admin methods
+    // restock
+    public static void AdminRestockMenu(EcoMatic ecoMatic)
+    {
+        ecoMatic.ShowInventory();
+        Console.WriteLine("\nWhich item would you like to restock?");
+        Console.Write("Input item ID: ");
+        string input = Console.ReadLine() ?? "";
+        if (int.TryParse(input, out int id))
+        {
+            ecoMatic.Restock(id);
+        }
+        else
+        {
+            Write.Error("Invalid input.");
+        }
+        Console.WriteLine("\nPress any key to continue...");
+        Console.ReadKey();
+    }
+
+    public static void AdminViewLogMenu(EcoMatic ecoMatic)
+    {
+        ecoMatic.ViewEventLog();
+        Console.WriteLine("\nPress any key to continue...");
+        Console.ReadKey();
+    }
+
+    public static void AdminClearLogMenu(EcoMatic ecoMatic)
+    {
+        Console.Write("Are you sure you want to clear the event log? (yes/no): ");
+        string confirm = Console.ReadLine() ?? "";
+        if (confirm.ToLower() == "yes")
+        {
+            ecoMatic.ClearEventLog();
+            Write.Success("Event log cleared.");
+        }
+        else
+        {
+            Write.Warning("Clear log cancelled.");
+        }
+        Console.WriteLine("\nPress any key to continue...");
+        Console.ReadKey();
+    }
+
+    public static void AdminAddItemMenu(EcoMatic ecoMatic)
+    {
+        // Check if inventory is already at max before prompting for details
+        if (ecoMatic.ItemCount >= 6)
+        {
+            Write.Error("Inventory is full! Cannot add more items. Maximum: 6 items");
+            Console.WriteLine("\nPress any key to continue...");
+            Console.ReadKey();
+            return;
+        }
+
+        Console.WriteLine("\nAdd New Item");
+        Console.Write("Item Type (snack/drink/misc): ");
+        string type = Console.ReadLine() ?? "";
+        
+        Console.Write("Item Name: ");
+        string name = Console.ReadLine() ?? "";
+        
+        Console.Write("Item Price: ₱");
+        if (!decimal.TryParse(Console.ReadLine(), out decimal price))
+        {
+            Write.Error("Invalid price.");
+            return;
+        }
+        
+        string extraValue = "";
+        if (type.ToLower() == "snack")
+        {
+            Console.Write("Calories: ");
+            extraValue = Console.ReadLine() ?? "";
+        }
+        else if (type.ToLower() == "drink")
+        {
+            Console.Write("Volume (ml): ");
+            extraValue = Console.ReadLine() ?? "";
+        }
+        
+        ecoMatic.AddItem(type, name, price, extraValue);
+        Console.WriteLine("\nPress any key to continue...");
+        Console.ReadKey();
+    }
+
+    public static void AdminRemoveItemMenu(EcoMatic ecoMatic)
+    {
+        ecoMatic.ShowInventory();
+        Console.WriteLine("\nWhich item would you like to remove?");
+        Console.Write("Input item ID: ");
+        string input = Console.ReadLine() ?? "";
+        if (int.TryParse(input, out int id))
+        {
+            ecoMatic.RemoveItem(id);
+        }
+        else
+        {
+            Write.Error("Invalid input.");
+        }
+        Console.WriteLine("\nPress any key to continue...");
+        Console.ReadKey();
     }
 
     // customer menu methods
@@ -138,7 +294,6 @@ class Program
             Write.Error("Invalid input.");
         }
     }
-
     // customer examine menu
     public static void CustomerExamineMenu(EcoMatic ecoMatic)
     {
@@ -154,7 +309,6 @@ class Program
             Write.Error("Invalid input.");
         }
     }
-    
     // customer recycle menu
     public static void CustomerRecycleMenu(EcoMatic ecoMatic)
     {
@@ -243,7 +397,7 @@ class EcoMatic
 
     //initialize inventory of type vendingitem to contain its different kinds (snacks, drinks, misc)
     private VendingItem[] _inventory = new VendingItem[MaxItems];
-    private int _itemCount = 0;
+    public int ItemCount = 0;
 
     // Transaction tracking arrays
     private string[] _transactionItemNames = new string[100];
@@ -300,7 +454,7 @@ class EcoMatic
     public void BuyItem(int id)
     {
         id--;
-        if (id < 0 || id >= _itemCount)
+        if (id < 0 || id >= ItemCount)
         {
             Write.Error("Invalid Range.");
             return;
@@ -339,7 +493,7 @@ class EcoMatic
     public void ExamineItem(int id)
     {
         id--;
-        if (id < 0 || id >= _itemCount)
+        if (id < 0 || id >= ItemCount)
         {
             Write.Error("Invalid Range.");
             return;
@@ -417,7 +571,7 @@ class EcoMatic
             {
                 totalRecycleCredit += _recycleCredits[i];
             }
-            
+
             AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
             AnsiConsole.MarkupLine("[green]Items Recycled:[/]");
             for (int i = 0; i < _recycleCount; i++)
@@ -444,7 +598,7 @@ class EcoMatic
 
         // reset for next customer
         CurrentBalance = 0;
-        
+
         // clear transaction arrays
         for (int i = 0; i < _transactionCount; i++)
         {
@@ -454,7 +608,7 @@ class EcoMatic
             _transactionTotalPrices[i] = 0;
         }
         _transactionCount = 0;
-        
+
         // clear recycle arrays
         for (int i = 0; i < _recycleCount; i++)
         {
@@ -469,7 +623,194 @@ class EcoMatic
         Console.ReadKey();
     }
 
-    //show inventory in a table using nuget package spectre console
+    // admin methods
+    // restock item to max stock
+    public void Restock(int id)
+    {
+        id--;
+        if (id < 0 || id >= ItemCount)
+        {
+            Write.Error("Invalid ID");
+            return;
+        }
+        VendingItem item = _inventory[id];
+        
+        int quantityToAdd = MaxStocks - item.ItemStock;
+        
+        if (quantityToAdd <= 0)
+        {
+            Write.Warning($"{item.ItemName} is already at max stock ({MaxStocks})");
+            return;
+        }
+        
+        item.ItemStock = MaxStocks;
+        UpdateInventory();
+        Write.Success($"Restocked {item.ItemName} to max capacity. Added {quantityToAdd} units. New stock: {item.ItemStock}/{MaxStocks}");
+        LogEvent("RESTOCK", "RESTOCK_ITEM", item.ItemName, 0, quantityToAdd, 0, $"Restocked {item.ItemName} to max. Added {quantityToAdd} units.");
+    }
+
+    public void GenerateDailySalesReport()
+    {
+        Console.Clear();
+        string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
+        string[] lines = File.ReadAllLines(filePath);
+        
+        DateTime today = DateTime.Now.Date;
+        string[] reportItemNames = new string[100];
+        int[] reportQuantities = new int[100];
+        decimal[] reportTotals = new decimal[100];
+        int reportCount = 0;
+        
+        // check file for purchaes and find timestap that mathes date now
+        for (int i = 1; i < lines.Length; i++)
+        {
+            string[] parts = lines[i].Split(',');
+            if (parts.Length < 3) continue;
+            
+            if (DateTime.TryParse(parts[0].Trim(), out DateTime timestamp) && timestamp.Date == today && parts[1].Trim() == "PURCHASE")
+            {
+                string itemName = parts[3].Trim();
+                int quantity = int.Parse(parts[5]);
+                decimal totalPrice = decimal.Parse(parts[6]);
+                
+                // check if item already in report
+                bool found = false;
+                for (int j = 0; j < reportCount; j++)
+                {
+                    if (reportItemNames[j] == itemName)
+                    {
+                        reportQuantities[j] += quantity;
+                        reportTotals[j] += totalPrice;
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found)
+                {
+                    reportItemNames[reportCount] = itemName;
+                    reportQuantities[reportCount] = quantity;
+                    reportTotals[reportCount] = totalPrice;
+                    reportCount++;
+                }
+            }
+        }
+
+        AnsiConsole.MarkupLine($"[bold green]DAILY SALES REPORT - {today:yyyy-MM-dd}[/]");
+        AnsiConsole.MarkupLine("[bold green]================================[/]");
+
+        if (reportCount == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No sales today.[/]");
+            return;
+        }
+
+        decimal totalDailyRevenue = 0;
+        for (int i = 0; i < reportCount; i++)
+        {
+            AnsiConsole.MarkupLine($"{reportItemNames[i]} - Qty: {reportQuantities[i]} - ₱{reportTotals[i]:F2}");
+            totalDailyRevenue += reportTotals[i];
+        }
+
+        AnsiConsole.MarkupLine("[bold green]================================[/]");
+        AnsiConsole.MarkupLine($"[bold cyan]Total Daily Revenue: ₱{totalDailyRevenue:F2}[/]");
+    }
+
+    public void ViewEventLog()
+    {
+        Console.Clear();
+        string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
+        string[] lines = File.ReadAllLines(filePath);
+        
+        for (int i = 0; i < lines.Length; i++)
+        {
+            Console.WriteLine(lines[i]);
+        }
+    }
+
+    public void ClearEventLog()
+    {
+        string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
+        try
+        {
+            using (StreamWriter w = new StreamWriter(filePath))
+            {
+                w.WriteLine("Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,TotalPrice,Details");
+            }
+        }
+        catch (IOException ex)
+        {
+            Write.Error("Error clearing event log. " + ex.Message);
+        }
+    }
+
+    public void AddItem(string type, string name, decimal price, string extraValue)
+    {
+        int stock = MaxStocks; // Default stock to MaxStocks constant
+
+        if (ItemCount >= MaxItems)
+        {
+            Write.Error($"Cannot add more items. Inventory is full (max {MaxItems} items).");
+            return;
+        }
+
+        type = type.ToLower().Trim();
+        if (type == "snack")
+        {
+            if (!double.TryParse(extraValue, out double calories))
+            {
+                Write.Error("Invalid calories value.");
+                return;
+            }
+            _inventory[ItemCount++] = new SnackItem(name, price, stock, calories);
+        }
+        else if (type == "drink")
+        {
+            if (!double.TryParse(extraValue, out double volume))
+            {
+                Write.Error("Invalid volume value.");
+                return;
+            }
+            _inventory[ItemCount++] = new DrinkItem(name, price, stock, volume);
+        }
+        else if (type == "misc")
+        {
+            _inventory[ItemCount++] = new MiscItem(name, price, stock);
+        }
+        else
+        {
+            Write.Error("Invalid item type. Use: snack, drink, or misc");
+            return;
+        }
+
+        UpdateInventory();
+        Write.Success($"Item '{name}' added successfully.");
+        LogEvent("ADMIN", "ADD_ITEM", name, price, stock, 0, $"Added new {type} item: {name} at ₱{price}");
+    }
+
+    public void RemoveItem(int id)
+    {
+        id--;
+        if (id < 0 || id >= ItemCount)
+        {
+            Write.Error("Invalid ID");
+            return;
+        }
+
+        string itemName = _inventory[id].ItemName;
+        
+        // shift items to the left
+        for (int i = id; i < ItemCount - 1; i++)
+        {
+            _inventory[i] = _inventory[i + 1];
+        }
+        ItemCount--;
+
+        UpdateInventory();
+        Write.Success($"Item '{itemName}' removed successfully.");
+        LogEvent("ADMIN", "REMOVE_ITEM", itemName, 0, 0, 0, $"Removed item: {itemName}");
+    }
+
     public void ShowInventory()
     {
         Console.Clear();
@@ -483,35 +824,29 @@ class EcoMatic
         table.AddColumn(new TableColumn("[bold yellow]Item[/]").LeftAligned());
         table.AddColumn(new TableColumn("[bold yellow]Price[/]").Centered());
         table.AddColumn(new TableColumn("[bold yellow]Stock[/]").Centered());
+        table.AddColumn(new TableColumn("[bold yellow]Status[/]").Centered());
 
         // set up the data to the table to be printed  after
-        for (int i = 0; i < _itemCount; i++)
+        for (int i = 0; i < ItemCount; i++)
         {
             VendingItem item = _inventory[i];
             
-            string stockIndicator;
-            if (item.ItemStock == 0)
-            {
-                stockIndicator = "[red]NO STOCK[/]";
-            }
-            else if (item.ItemStock <= 3)
-            {
-                stockIndicator = "[red]●[/]";
-            }
-            else if (item.ItemStock <= 6)
-            {
-                stockIndicator = "[yellow]● ●[/]";
-            }
-            else
-            {
-                stockIndicator = "[green]● ● ●[/]";
-            }
+            string stockDisplay = $"[blue]{item.ItemStock}/{MaxStocks}[/]";
+
+            string statusDots;
+            if (item.ItemStock <= (MaxStocks * 0.3)) 
+                statusDots = "[red]●[/]";
+            else if (item.ItemStock <= (MaxStocks * 0.5)) 
+                statusDots = "[yellow]● ●[/]";
+            else 
+                statusDots = "[green]● ● ●[/]";
             
             table.AddRow(
                 $"[cyan]{i + 1}[/]", // item num
                 $"[bold]{item.ItemName}[/]", // name
                 $"[green]₱{item.ItemPrice:F2}[/]", //price
-                stockIndicator // stock indicator string 
+                stockDisplay, // stock display with numbers
+                statusDots // status dots
             );
         }
 
@@ -520,7 +855,7 @@ class EcoMatic
         AnsiConsole.MarkupLine($"[bold green]Current Balance: ₱{CurrentBalance:F2}[/]");
     }
 
-    //wrapper
+    //File Handling Methods
     private void CheckFiles()
     {
         CheckInventoryFile();
@@ -647,16 +982,16 @@ class EcoMatic
             if (itemType == "snack")
             {
                 double calories = double.Parse(parts[4]);
-                _inventory[_itemCount++] = new SnackItem(itemName, itemPrice, itemStock, calories);
+                _inventory[ItemCount++] = new SnackItem(itemName, itemPrice, itemStock, calories);
             }
             else if (itemType == "drink")
             {
                 double volume = double.Parse(parts[4]);
-                _inventory[_itemCount++] = new DrinkItem(itemName, itemPrice, itemStock, volume);
+                _inventory[ItemCount++] = new DrinkItem(itemName, itemPrice, itemStock, volume);
             }
             else if (itemType == "misc")
             {
-                _inventory[_itemCount++] = new MiscItem(itemName, itemPrice, itemStock);
+                _inventory[ItemCount++] = new MiscItem(itemName, itemPrice, itemStock);
             }
             else
             {
@@ -676,7 +1011,7 @@ class EcoMatic
                 w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
 
                 // _inventory to inventory.csv
-                for (int i = 0; i < _itemCount; i++)
+                for (int i = 0; i < ItemCount; i++)
                 {
                     w.WriteLine(_inventory[i].ToCsvLine());
                 }

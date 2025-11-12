@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.IO;
 using Spectre.Console;
+using System.Text;
 
 class Program
 {
@@ -80,13 +81,13 @@ class Program
                     CustomerBuyMenu(ecoMatic);
                     break;
                 case "3":
-                    // CustomerExamineMenu(ecoMatic);
+                    CustomerExamineMenu(ecoMatic);
                     break;
                 case "4":
-                    // CustomerRecycleMenu(ecoMatic);
+                    CustomerRecycleMenu(ecoMatic);
                     break;
                 case "5":
-                    // CustomerChangeMenu(ecoMatic);
+                    ecoMatic.GetChange();
                     return;
                 default:
                     Write.Error("Invalid Input");
@@ -122,7 +123,7 @@ class Program
             Write.Error("Invalid input.");
         }
     }
-
+    // ccustomer buy menu
     public static void CustomerBuyMenu(EcoMatic ecoMatic)
     {
         Console.WriteLine("\nWhich item would you like to buy? ");
@@ -137,8 +138,52 @@ class Program
             Write.Error("Invalid input.");
         }
     }
-    
 
+    // customer examine menu
+    public static void CustomerExamineMenu(EcoMatic ecoMatic)
+    {
+        Console.WriteLine("\nWhich item would you like to examine?");
+        Console.Write("Input item ID: ");
+        string input = Console.ReadLine() ?? "";
+        if (int.TryParse(input, out int id))
+        {
+            ecoMatic.ExamineItem(id);
+        }
+        else
+        {
+            Write.Error("Invalid input.");
+        }
+    }
+    
+    // customer recycle menu
+    public static void CustomerRecycleMenu(EcoMatic ecoMatic)
+    {
+        Console.WriteLine("\nList of items for recycle and price per gram.");
+        for (int i = 0; i < ecoMatic.RecyclableItems.Length; i++)
+        {
+            AnsiConsole.MarkupLine($"[bold yellow]{i + 1}.[/]{ecoMatic.RecyclableItems[i]} - ₱{ecoMatic.RecycleItemsPricePerGram[i]:F2} per gram");
+        }
+        Console.WriteLine("Which item would you like to recycle?");
+        Console.Write("Input item ID: ");
+        string input = Console.ReadLine() ?? "";
+        if (int.TryParse(input, out int id))
+        {
+            Console.Write("Enter weight in grams (1 - 5000g): ");
+            string gramsInput = Console.ReadLine() ?? "";
+            if (double.TryParse(gramsInput, out double grams))
+            {
+                ecoMatic.RecycleForCredit(id, grams);
+            }
+            else
+            {
+                Write.Error("Invalid input.");
+            }
+        }
+        else
+        {
+            Write.Error("Invalid Input.");
+        }
+    }
 }
 
 // helper class so i have fewer lines of code when using thread sleep
@@ -199,9 +244,28 @@ class EcoMatic
     //initialize inventory of type vendingitem to contain its different kinds (snacks, drinks, misc)
     private VendingItem[] _inventory = new VendingItem[MaxItems];
     private int _itemCount = 0;
+
+    // Transaction tracking arrays
+    private string[] _transactionItemNames = new string[100];
+    private decimal[] _transactionPrices = new decimal[100];
+    private int[] _transactionQuantities = new int[100];
+    private decimal[] _transactionTotalPrices = new decimal[100];
+    private int _transactionCount = 0;
+
+    // Recycle transaction tracking arrays
+    private string[] _recycleItemNames = new string[100];
+    private double[] _recycleWeights = new double[100];
+    private decimal[] _recyclePricesPerGram = new decimal[100];
+    private decimal[] _recycleCredits = new decimal[100];
+    private int _recycleCount = 0;
     
     public decimal CurrentBalance { get; private set; }
-    public decimal[] AcceptedBills = new decimal[] { 20, 50, 100, 200, 500, 1000 };
+    public decimal[] AcceptedBills = { 20, 50, 100, 200, 500, 1000 };
+
+    // recycle items to be implemented in the future - recycleItems, for now it is only stored on memory
+    // parallel arrays (per gram pricing)
+    public string[] RecyclableItems = { "Plastic Bottle","Glass Bottle" , "Aluminum Can"};
+    public decimal[] RecycleItemsPricePerGram = { 0.01m, 0.02m, 0.03m };
 
     public EcoMatic(string inventoryName, string eventLogName, string directoryFP)
     {
@@ -255,13 +319,154 @@ class EcoMatic
             return;
         }
 
-        Console.WriteLine(item.GetDispenseMessage());
+        AnsiConsole.MarkupLine(item.GetDispenseMessage());
         Write.Success($"You have successfully received {item.ItemName}");
         CurrentBalance -= item.ItemPrice;
         item.ItemStock--;
         UpdateInventory();
         LogEvent("PURCHASE", "BUY_ITEM", item.ItemName, item.ItemPrice, 1, item.ItemPrice, $"Bought 1x {item.ItemName}. Remaining Balance: ₱{CurrentBalance}");
+        
+        // Add to transaction tracking
+        _transactionItemNames[_transactionCount] = item.ItemName;
+        _transactionPrices[_transactionCount] = item.ItemPrice;
+        _transactionQuantities[_transactionCount] = 1;
+        _transactionTotalPrices[_transactionCount] = item.ItemPrice;
+        _transactionCount++;
+        
         Write.DelayLoad("Thanks for using eco-matic! Returning");
+    }
+    // examine item
+    public void ExamineItem(int id)
+    {
+        id--;
+        if (id < 0 || id >= _itemCount)
+        {
+            Write.Error("Invalid Range.");
+            return;
+        }
+        VendingItem item = _inventory[id];
+        AnsiConsole.MarkupLine(item.GetExamineMessage());
+        Console.WriteLine("Press any key to continue...");
+        Console.ReadKey();
+    }
+    // recylce item
+    public void RecycleForCredit(int id, double grams)
+    {
+        id--;
+        if (id < 0 || id >= RecyclableItems.Length)
+        {
+            Write.Error("Invalid Range.");
+            return;
+        }
+        if (grams <= 0 || grams > 5000)
+        {
+            Write.Error("Invalid weight. Please enter a value between 1 and 5000 grams.");
+            return;
+        }
+
+        decimal credit = (decimal)grams * RecycleItemsPricePerGram[id];
+        CurrentBalance += credit;
+        LogEvent("RECYCLE", "RECYCLE_ITEM", RecyclableItems[id], RecycleItemsPricePerGram[id], (int)grams, credit, $"Recycled {grams}g of {RecyclableItems[id]}. Credited ₱{credit:F2}. Current Balance: ₱{CurrentBalance:F2}");
+        
+        // Track recycled item
+        _recycleItemNames[_recycleCount] = RecyclableItems[id];
+        _recycleWeights[_recycleCount] = grams;
+        _recyclePricesPerGram[_recycleCount] = RecycleItemsPricePerGram[id];
+        _recycleCredits[_recycleCount] = credit;
+        _recycleCount++;
+        
+        Write.Success($"Recycled {grams}g of {RecyclableItems[id]}. Credited ₱{credit:F2}.");
+    }
+    // get change and get receipt
+    public void GetChange()
+    {
+        if (CurrentBalance <= 0 && _transactionCount == 0)
+        {
+            Write.Error("No transactions to return. Your balance is ₱0.00");
+            return;
+        }
+
+        // Calculate total spent
+        decimal totalSpent = 0;
+        for (int i = 0; i < _transactionCount; i++)
+        {
+            totalSpent += _transactionTotalPrices[i];
+        }
+
+        // Create receipt
+        Console.Clear();
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+        AnsiConsole.MarkupLine("[bold cyan]ECO-MATIC RECEIPT[/]");
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+
+        if (_transactionCount > 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]Items Purchased:[/]");
+            for (int i = 0; i < _transactionCount; i++)
+            {
+                AnsiConsole.MarkupLine($"{_transactionItemNames[i]} x{_transactionQuantities[i]} ₱{_transactionTotalPrices[i]:F2}");
+            }
+            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+            AnsiConsole.MarkupLine($"[cyan]Total Spent:[/] ₱{totalSpent:F2}");
+        }
+
+        if (_recycleCount > 0)
+        {
+            decimal totalRecycleCredit = 0;
+            for (int i = 0; i < _recycleCount; i++)
+            {
+                totalRecycleCredit += _recycleCredits[i];
+            }
+            
+            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+            AnsiConsole.MarkupLine("[green]Items Recycled:[/]");
+            for (int i = 0; i < _recycleCount; i++)
+            {
+                AnsiConsole.MarkupLine($"{_recycleItemNames[i]} {_recycleWeights[i]}g ₱{_recycleCredits[i]:F2}");
+            }
+            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+            AnsiConsole.MarkupLine($"[cyan]Total Recycled Credit:[/] ₱{totalRecycleCredit:F2}");
+        }
+
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+        AnsiConsole.MarkupLine($"[yellow]Change Amount:[/] ₱{CurrentBalance:F2}");
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+        AnsiConsole.MarkupLine("[italic]Thank you for using Eco-Matic![/]");
+        AnsiConsole.MarkupLine("[italic]Help save the environment today.[/]");
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+
+        if (CurrentBalance > 0)
+        {
+            Write.DelayLine("Dispensing change...", 500);
+            Write.Success($"Dispensed ₱{CurrentBalance:F2}");
+            LogEvent("TRANSACTION", "RETURN_CHANGE", "", 0, 1, CurrentBalance, $"Returned ₱{CurrentBalance:F2} to customer.");
+        }
+
+        // reset for next customer
+        CurrentBalance = 0;
+        
+        // clear transaction arrays
+        for (int i = 0; i < _transactionCount; i++)
+        {
+            _transactionItemNames[i] = "";
+            _transactionPrices[i] = 0;
+            _transactionQuantities[i] = 0;
+            _transactionTotalPrices[i] = 0;
+        }
+        _transactionCount = 0;
+        
+        // clear recycle arrays
+        for (int i = 0; i < _recycleCount; i++)
+        {
+            _recycleItemNames[i] = "";
+            _recycleWeights[i] = 0;
+            _recyclePricesPerGram[i] = 0;
+            _recycleCredits[i] = 0;
+        }
+        _recycleCount = 0;
+
+        Console.WriteLine("\nPress any key to continue...");
+        Console.ReadKey();
     }
 
     //show inventory in a table using nuget package spectre console
@@ -273,7 +478,7 @@ class EcoMatic
         Table table = new Table();
         table.Border = TableBorder.Rounded;
         table.BorderColor(Color.Green);
-        table.Title = new TableTitle("[bold green]╔═══ ECO-MATIC VENDING MACHINE ═══╗[/]");
+        table.Title = new TableTitle("[bold green]+--- ECO-MATIC VENDING MACHINE ---+[/]");
         table.AddColumn(new TableColumn("[bold yellow]ID[/]").Centered());
         table.AddColumn(new TableColumn("[bold yellow]Item[/]").LeftAligned());
         table.AddColumn(new TableColumn("[bold yellow]Price[/]").Centered());
@@ -578,12 +783,12 @@ class SnackItem : VendingItem, IHasCalories
 
     public override string GetDispenseMessage()
     {
-        return $"Munch time! Your {ItemName} is ready to go!";
+        return $"[bold green]Munch time![/] Your [yellow]{ItemName}[/] is ready to go!";
     }
 
     public override string GetExamineMessage()
     {
-        return $"{ItemName} | Calories: {Calories}kcal | Delicious snack for sustainable energy.";
+        return $"[bold cyan]{ItemName}[/] | [green]Calories:[/] {Calories}kcal | [italic]Delicious snack for sustainable energy.[/]";
     }
 
     public override string ToCsvLine()
@@ -603,12 +808,12 @@ class DrinkItem : VendingItem, IHasVolume
 
     public override string GetDispenseMessage()
     {
-        return $"{ItemName} ready! Sip with purpose.";
+        return $"[bold cyan]{ItemName} ready![/] [green]Sip with purpose.[/]";
     }
 
     public override string GetExamineMessage()
     {
-        return $"{ItemName} | Volume: {Volume}ml | Ice cold refreshment - perfectly sustainable hydration.";
+        return $"[bold cyan]{ItemName}[/] | [blue]Volume:[/] {Volume}ml | [italic]Ice cold refreshment - perfectly sustainable hydration.[/]";
     }
 
     public override string ToCsvLine()
@@ -623,12 +828,12 @@ class MiscItem : VendingItem
 
     public override string GetDispenseMessage()
     {
-        return $"{ItemName} acquired! Keep eco-ing!";
+        return $"[bold green]{ItemName} acquired![/] [yellow]Keep eco-ing![/]";
     }
 
     public override string GetExamineMessage()
     {
-        return $"{ItemName} | Essential item for eco-conscious living.";
+        return $"[bold green]{ItemName}[/] | [italic]Essential item for eco-conscious living.[/]";
     }
 
     public override string ToCsvLine()

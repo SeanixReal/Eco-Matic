@@ -2,8 +2,8 @@
 
 ## DEMO
 
-![Customer](assets/gifs/Customer.gif)
-![Customer](assets/Gifs/Admin.gif)
+![Customer](Assets/Gifs/Customer.gif)
+![Admin](Assets/Gifs/Admin.gif)
 
 ## I. Project Title
 

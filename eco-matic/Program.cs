@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.IO;
 using Spectre.Console;
-using System.Text;
 
 class Program
 {

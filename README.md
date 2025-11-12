@@ -108,8 +108,6 @@ This project can potentially be a great idea in the future to be put on the stre
 - **Abstraction**: Abstract base class and interfaces
 - **Interface Implementation**: IHasVolume, IHasCalories
 
----
-
 ## IX. Sustainable Development Goal (SDG) Connection
 
 This project promotes **SDG 12: Responsible Consumption and Production** by:
@@ -118,19 +116,10 @@ This project promotes **SDG 12: Responsible Consumption and Production** by:
 - Raising awareness about proper waste management
 - Creating a practical solution for trash collection and incentivization
 
----
-
 ## X. Author Notes
 
 This is a midterm project demonstrating core C# and OOP principles through a practical, interactive console application. The code emphasizes proper data handling, and user-friendly design while maintaining a focus on sustainability and social responsibility.
 
----
-
 ## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-**Last Updated**: November 12, 2025  
-**Status**: ✅ Complete and Ready for Presentation

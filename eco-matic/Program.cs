@@ -125,7 +125,7 @@ class Program
 
     public static void CustomerBuyMenu(EcoMatic ecoMatic)
     {
-        Console.WriteLine("Which item would you like to buy? ");
+        Console.WriteLine("\nWhich item would you like to buy? ");
         Console.Write("Input item ID: ");
         string input = Console.ReadLine() ?? "";
         if (int.TryParse(input, out int id))
@@ -161,7 +161,7 @@ class Write
         Write.Delay(message);
         for (int i = 0; i < 3; i++)
         {
-            Write.Delay(".", 500);
+            Write.Delay(".", 300);
         }
         Console.Write("\n");
     }
@@ -227,12 +227,12 @@ class EcoMatic
         {
             Write.Error("Invalid bill amount.");
             return;
-        }
+        } 
         CurrentBalance += amount;
         LogEvent("TRANSACTION", "INSERT_MONEY", "", 0, 1, 0, $"Inserted ₱{amount}. Current Balance: ₱{CurrentBalance}");
         Write.Success($"₱{amount} inserted successfully.");
     }
-
+    // buy item
     public void BuyItem(int id)
     {
         id--;
@@ -243,45 +243,27 @@ class EcoMatic
         }
 
         VendingItem item = _inventory[id];
-        int quantity = 0;
-        while(true)
+        if (item.ItemStock <= 0)
         {
-            if (item.ItemStock <= 0)
-            {
-                Write.Error($"Sorry, {item.ItemName} is out of stock.");
-                return;
-            }
-
-            if (CurrentBalance < item.ItemPrice)
-            {
-                Write.Error("Sorry, you don't have enough balance");
-                return;
-            }
-
-            Console.WriteLine(item.GetDispenseMessage());
-            Write.Success($"You have successfully received {item.ItemName}");
-            CurrentBalance -= item.ItemPrice;
-            quantity++;
-            Console.WriteLine("Would you like to buy again? (Y/N): ");
-            string choice = (Console.ReadLine() ?? "").ToLower();
-            if (choice != "y" && choice != "yes")
-            {
-                Write.DelayLoad("Thanks for using eco-matic! Returning");
-                decimal totalPrice = item.ItemPrice * quantity;
-                LogEvent("PURCHASE", "BUY_ITEM", item.ItemName, item.ItemPrice, quantity, totalPrice, $"Bought {quantity}x {item.ItemName}. Remaining Balance: ₱{CurrentBalance}");
-                item.ItemStock -= quantity;
-                UpdateInventory();
-                return;
-            }
+            Write.Error($"Sorry, {item.ItemName} is out of stock.");
+            return;
         }
-        
-        
 
-        
+        if (CurrentBalance < item.ItemPrice)
+        {
+            Write.Error("Sorry, you don't have enough balance");
+            return;
+        }
 
-
-
+        Console.WriteLine(item.GetDispenseMessage());
+        Write.Success($"You have successfully received {item.ItemName}");
+        CurrentBalance -= item.ItemPrice;
+        item.ItemStock--;
+        UpdateInventory();
+        LogEvent("PURCHASE", "BUY_ITEM", item.ItemName, item.ItemPrice, 1, item.ItemPrice, $"Bought 1x {item.ItemName}. Remaining Balance: ₱{CurrentBalance}");
+        Write.DelayLoad("Thanks for using eco-matic! Returning");
     }
+
     //show inventory in a table using nuget package spectre console
     public void ShowInventory()
     {
@@ -494,8 +476,6 @@ class EcoMatic
                     w.WriteLine(_inventory[i].ToCsvLine());
                 }
             }
-
-            Write.DelayLine($"{_inventoryFileName} updated succesfully.");
         }
         catch (IOException ex)
         {
@@ -598,12 +578,12 @@ class SnackItem : VendingItem, IHasCalories
 
     public override string GetDispenseMessage()
     {
-        return $"Enjoy your tasty {ItemName}!";
+        return $"Munch time! Your {ItemName} is ready to go!";
     }
 
     public override string GetExamineMessage()
     {
-        return $"A tasty {ItemName} with {Calories}kcal worth of deliciousness.";
+        return $"{ItemName} | Calories: {Calories}kcal | Delicious snack for sustainable energy.";
     }
 
     public override string ToCsvLine()
@@ -623,12 +603,12 @@ class DrinkItem : VendingItem, IHasVolume
 
     public override string GetDispenseMessage()
     {
-        return $"Enjoy your refreshing {ItemName}!";
+        return $"{ItemName} ready! Sip with purpose.";
     }
 
     public override string GetExamineMessage()
     {
-        return $"A cold {ItemName} with {Volume}ml of sweetness";
+        return $"{ItemName} | Volume: {Volume}ml | Ice cold refreshment - perfectly sustainable hydration.";
     }
 
     public override string ToCsvLine()
@@ -643,12 +623,12 @@ class MiscItem : VendingItem
 
     public override string GetDispenseMessage()
     {
-        return $"This {ItemName} is going to be useful!";
+        return $"{ItemName} acquired! Keep eco-ing!";
     }
 
     public override string GetExamineMessage()
     {
-        return $"A useful {ItemName}";
+        return $"{ItemName} | Essential item for eco-conscious living.";
     }
 
     public override string ToCsvLine()

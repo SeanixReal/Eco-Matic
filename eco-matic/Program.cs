@@ -339,7 +339,6 @@ class Program
     }
 }
 
-// helper class so i have fewer lines of code when using thread sleep
 class Write
 {
     public static void DelayLine(string message, int delay = 300)
@@ -398,14 +397,14 @@ class EcoMatic
     private VendingItem[] _inventory = new VendingItem[MaxItems];
     public int ItemCount = 0;
 
-    // Transaction tracking arrays
+    // transaction tracking arrays
     private string[] _transactionItemNames = new string[100];
     private decimal[] _transactionPrices = new decimal[100];
     private int[] _transactionQuantities = new int[100];
     private decimal[] _transactionTotalPrices = new decimal[100];
     private int _transactionCount = 0;
 
-    // Recycle transaction tracking arrays
+    // recycle transaction tracking arrays
     private string[] _recycleItemNames = new string[100];
     private double[] _recycleWeights = new double[100];
     private decimal[] _recyclePricesPerGram = new decimal[100];
@@ -434,6 +433,7 @@ class EcoMatic
 
         //load inventory file into local _inventory 
         LoadInventory();
+        UpdateInventory();
     }
 
     // customer methods
@@ -835,7 +835,7 @@ class EcoMatic
             string statusDots;
             if (item.ItemStock <= (MaxStocks * 0.3)) 
                 statusDots = "[red]●[/]";
-            else if (item.ItemStock <= (MaxStocks * 0.5)) 
+            else if (item.ItemStock <= (MaxStocks * 0.6)) 
                 statusDots = "[yellow]● ●[/]";
             else 
                 statusDots = "[green]● ● ●[/]";
@@ -1009,7 +1009,7 @@ class EcoMatic
             {
                 w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
 
-                // _inventory to inventory.csv
+                // _inventory to .csvinventory
                 for (int i = 0; i < ItemCount; i++)
                 {
                     w.WriteLine(_inventory[i].ToCsvLine());

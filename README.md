@@ -116,7 +116,22 @@ This project promotes **SDG 12: Responsible Consumption and Production** by:
 - Raising awareness about proper waste management
 - Creating a practical solution for trash collection and incentivization
 
-## X. Author Notes
+## X. Areas for Improvement
+
+### To Refactor:
+- **Transaction Tracking Arrays**: I'm using too many parallel arrays (`_transactionItemNames[]`, `_transactionPrices[]`, etc.). I should consolidate these into a `Transaction` class or use `List<T>` for cleaner management
+- **Code Organization**: Everything is in one `Program.cs` file. I should split my classes into separate files to make the codebase more maintainable
+- **Magic Numbers**: I have hardcoded constants scattered around (array sizes, stock thresholds). I should extract these to class-level constants for easier adjustments
+- **Sales Report**: My report only shows basic metrics. I could enhance it to display insights like best-selling items or item type breakdown
+
+### To Implement:
+- **Enhanced Error Handling**: I need to add more robust try-catch blocks, especially when parsing CSV files and validating user input
+- **Advanced Reporting**: I want to add features like multi-day sales reports, inventory valuation, and restock history
+- **Recyclable Item Configuration**: Instead of hardcoding recycling rates, I should make them configurable
+- **Low-Stock Alerts**: I should notify the admin when items fall below a certain threshold
+- **Search/Filter for Logs**: I want to add the ability to filter event logs by date, item name, or transaction type
+
+## XI. Author Notes
 
 This is a midterm project demonstrating core C# and OOP principles through a practical, interactive console application. The code emphasizes proper data handling, and user-friendly design while maintaining a focus on sustainability and social responsibility.
 

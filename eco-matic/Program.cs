@@ -10,13 +10,11 @@ class Program
     {
         Console.Clear();
         Console.Title = "Eco-Matic Vending Machine";
-        // initialize ecoMatic instance with the fp for inventory and eventLog
         try
         {
             EcoMatic ecoMatic = new EcoMatic("inventory.csv", "eventLog.csv", "data");
 
             Write.DelayLine("Eco-Matic is still in early development");
-
             Write.DelayLoad("Loading");
 
             MainMenu(ecoMatic);
@@ -153,8 +151,7 @@ class Program
         Console.WriteLine("\nPress any key to continue...");
         Console.ReadKey();
     }
-    // admin methods
-    // restock
+
     public static void AdminRestockMenu(EcoMatic ecoMatic)
     {
         ecoMatic.ShowInventory();
@@ -257,7 +254,6 @@ class Program
         Console.ReadKey();
     }
 
-    // customer menu methods
     public static void CustomerInsertMoneyMenu(EcoMatic ecoMatic)
     {
         Console.WriteLine("\nAccepted bills by the eco-matic:");
@@ -278,7 +274,7 @@ class Program
             Write.Error("Invalid input.");
         }
     }
-    // ccustomer buy menu
+
     public static void CustomerBuyMenu(EcoMatic ecoMatic)
     {
         Console.WriteLine("\nWhich item would you like to buy? ");
@@ -308,7 +304,7 @@ class Program
             Write.Error("Invalid input.");
         }
     }
-    // customer recycle menu
+
     public static void CustomerRecycleMenu(EcoMatic ecoMatic)
     {
         Console.WriteLine("\nList of items for recycle and price per gram.");
@@ -384,27 +380,22 @@ class Write
 
 class EcoMatic
 {
-    //min 6
     public const int MaxItems = 6;
     public const int MaxStocks = 10;
 
-    //files and directories
     private string _inventoryFileName;
     private string _eventLogFileName;
     private string _dataDirectory;
 
-    //initialize inventory of type vendingitem to contain its different kinds (snacks, drinks, misc)
     private VendingItem[] _inventory = new VendingItem[MaxItems];
     public int ItemCount = 0;
 
-    // transaction tracking arrays
     private string[] _transactionItemNames = new string[100];
     private decimal[] _transactionPrices = new decimal[100];
     private int[] _transactionQuantities = new int[100];
     private decimal[] _transactionTotalPrices = new decimal[100];
     private int _transactionCount = 0;
 
-    // recycle transaction tracking arrays
     private string[] _recycleItemNames = new string[100];
     private double[] _recycleWeights = new double[100];
     private decimal[] _recyclePricesPerGram = new decimal[100];
@@ -414,30 +405,22 @@ class EcoMatic
     public decimal CurrentBalance { get; private set; }
     public decimal[] AcceptedBills = { 20, 50, 100, 200, 500, 1000 };
 
-    // recycle items to be implemented in the future - recycleItems, for now it is only stored on memory
-    // parallel arrays (per gram pricing)
     public string[] RecyclableItems = { "Plastic Bottle","Glass Bottle" , "Aluminum Can"};
     public decimal[] RecycleItemsPricePerGram = { 0.01m, 0.02m, 0.03m };
 
     public EcoMatic(string inventoryName, string eventLogName, string directoryFP)
     {
-        // initialize inventory and event log and directory
         _inventoryFileName = inventoryName;
         _eventLogFileName = eventLogName;
         _dataDirectory = directoryFP;
 
-        // runs a check on directory data
-        // runs a check on both files before running program to prevent errors
         CheckDirectory();
         CheckFiles();
 
-        //load inventory file into local _inventory 
         LoadInventory();
         UpdateInventory();
     }
 
-    // customer methods
-    // insert money
     public void InsertMoney(decimal amount)
     {
         if (!AcceptedBills.Contains(amount))
@@ -449,7 +432,7 @@ class EcoMatic
         LogEvent("TRANSACTION", "INSERT_MONEY", "", 0, 1, 0, $"Inserted ₱{amount}. Current Balance: ₱{CurrentBalance}");
         Write.Success($"₱{amount} inserted successfully.");
     }
-    // buy item
+
     public void BuyItem(int id)
     {
         id--;
@@ -479,7 +462,7 @@ class EcoMatic
         UpdateInventory();
         LogEvent("PURCHASE", "BUY_ITEM", item.ItemName, item.ItemPrice, 1, item.ItemPrice, $"Bought 1x {item.ItemName}. Remaining Balance: ₱{CurrentBalance}");
         
-        // Add to transaction tracking
+        // add to transaction tracking
         _transactionItemNames[_transactionCount] = item.ItemName;
         _transactionPrices[_transactionCount] = item.ItemPrice;
         _transactionQuantities[_transactionCount] = 1;
@@ -488,7 +471,7 @@ class EcoMatic
         
         Write.DelayLoad("Thanks for using eco-matic! Returning");
     }
-    // examine item
+
     public void ExamineItem(int id)
     {
         id--;
@@ -502,7 +485,7 @@ class EcoMatic
         Console.WriteLine("Press any key to continue...");
         Console.ReadKey();
     }
-    // recylce item
+
     public void RecycleForCredit(int id, double grams)
     {
         id--;
@@ -521,7 +504,7 @@ class EcoMatic
         CurrentBalance += credit;
         LogEvent("RECYCLE", "RECYCLE_ITEM", RecyclableItems[id], RecycleItemsPricePerGram[id], (int)grams, credit, $"Recycled {grams}g of {RecyclableItems[id]}. Credited ₱{credit:F2}. Current Balance: ₱{CurrentBalance:F2}");
         
-        // Track recycled item
+        // track recycled item
         _recycleItemNames[_recycleCount] = RecyclableItems[id];
         _recycleWeights[_recycleCount] = grams;
         _recyclePricesPerGram[_recycleCount] = RecycleItemsPricePerGram[id];
@@ -530,7 +513,7 @@ class EcoMatic
         
         Write.Success($"Recycled {grams}g of {RecyclableItems[id]}. Credited ₱{credit:F2}.");
     }
-    // get change and get receipt
+
     public void GetChange()
     {
         if (CurrentBalance <= 0 && _transactionCount == 0)
@@ -539,14 +522,14 @@ class EcoMatic
             return;
         }
 
-        // Calculate total spent
+        // calculate total spent
         decimal totalSpent = 0;
         for (int i = 0; i < _transactionCount; i++)
         {
             totalSpent += _transactionTotalPrices[i];
         }
 
-        // Create receipt
+        // create receipt
         Console.Clear();
         AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
         AnsiConsole.MarkupLine("[bold cyan]ECO-MATIC RECEIPT[/]");
@@ -622,8 +605,6 @@ class EcoMatic
         Console.ReadKey();
     }
 
-    // admin methods
-    // restock item to max stock
     public void Restock(int id)
     {
         id--;
@@ -660,7 +641,6 @@ class EcoMatic
         decimal[] reportTotals = new decimal[100];
         int reportCount = 0;
         
-        // check file for purchaes and find timestap that mathes date now
         for (int i = 1; i < lines.Length; i++)
         {
             string[] parts = lines[i].Split(',');
@@ -672,7 +652,6 @@ class EcoMatic
                 int quantity = int.Parse(parts[5]);
                 decimal totalPrice = decimal.Parse(parts[6]);
                 
-                // check if item already in report
                 bool found = false;
                 for (int j = 0; j < reportCount; j++)
                 {
@@ -745,7 +724,7 @@ class EcoMatic
 
     public void AddItem(string type, string name, decimal price, string extraValue)
     {
-        int stock = MaxStocks; // Default stock to MaxStocks constant
+        int stock = MaxStocks; // default stock to MaxStocks constant
 
         if (ItemCount >= MaxItems)
         {
@@ -861,7 +840,6 @@ class EcoMatic
         CheckEventLogFile();
     }
     
-    // checks directory validity
     public void CheckDirectory()
     {
         try
@@ -893,7 +871,6 @@ class EcoMatic
             return;
         }
 
-        // check header if correct
         string[] lines = File.ReadAllLines(filePath);
         int length = lines.Length;
         if (lines[0] != "Type,Name,Price,Stock,Calories/Volume" || length <= 1)
@@ -904,10 +881,8 @@ class EcoMatic
             return;
         }
 
-        //check for potential formatting errors to prevent future errors
         for (int i = 1; i < length; i++)
         {
-            // catch for parse error or formatting error and create default file if error
             try
             {
                 string[] parts = lines[i].Split(',');
@@ -938,7 +913,6 @@ class EcoMatic
         }
     }
 
-    // defualt inventory
     private void CreateDefaultInventoryFile()
     {
         try
@@ -968,7 +942,6 @@ class EcoMatic
         string filePath = Path.Combine(_dataDirectory, _inventoryFileName);
         string[] lines = File.ReadAllLines(filePath);
         int length = lines.Length;
-        // inventory.csv to _inventory
         for (int i = 1; i < length; i++)
         {
             string[] parts = lines[i].Split(',');
@@ -1009,7 +982,6 @@ class EcoMatic
             {
                 w.WriteLine("Type,Name,Price,Stock,Calories/Volume");
 
-                // _inventory to .csvinventory
                 for (int i = 0; i < ItemCount; i++)
                 {
                     w.WriteLine(_inventory[i].ToCsvLine());
@@ -1022,7 +994,6 @@ class EcoMatic
         }
     }
 
-    // log event to be added to eventlog csv
     private void LogEvent(string eventType, string action, string itemName, decimal unitPrice, int quantity, decimal totalPrice, string details)
     {
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
@@ -1066,7 +1037,6 @@ class EcoMatic
         }
     }
 
-    // make default event log 
     private void CreateDefaultEventLogFile()
     {
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
@@ -1089,7 +1059,6 @@ interface IHasCalories
 
 abstract class VendingItem
 {
-    // private set so it can only be modified wihin the class
     public string ItemName { get; set; }
     public decimal ItemPrice { get; set; }
     public int ItemStock { get; set; }

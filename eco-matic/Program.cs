@@ -812,7 +812,9 @@ class EcoMatic
             string stockDisplay = $"[blue]{item.ItemStock}/{MaxStocks}[/]";
 
             string statusDots;
-            if (item.ItemStock <= (MaxStocks * 0.3)) 
+            if (item.ItemStock == 0)
+                statusDots = "[red]OUT OF STOCK[/]";
+            else if (item.ItemStock <= (MaxStocks * 0.3)) 
                 statusDots = "[red]●[/]";
             else if (item.ItemStock <= (MaxStocks * 0.6)) 
                 statusDots = "[yellow]● ●[/]";

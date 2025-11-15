@@ -81,6 +81,7 @@ This project can potentially be a great idea in the future to be put on the stre
 - Examine item details with flavor text
 - Recycle items for credit (plastic, glass, aluminum)
 - Get change and receive receipt
+- Receipts consolidate identical purchases and recycled items into single lines
 - Real-time balance tracking
 
 ### ✅ Admin Mode:
@@ -132,6 +133,116 @@ This project promotes **SDG 12: Responsible Consumption and Production** by:
 ## XI. Author Notes
 
 This is a midterm project demonstrating core C# and OOP principles through a practical, interactive console application. The code emphasizes proper data handling, and user-friendly design while maintaining a focus on sustainability and social responsibility.
+
+## XII. Class Diagram
+
+```mermaid
+classDiagram
+    class Program {
+        +Main(string[] args)
+        +MainMenu(EcoMatic)
+        +CustomerMenu(EcoMatic)
+        +AdminMenu(EcoMatic)
+    }
+
+    class Write {
+        +Success(message)
+        +Warning(message)
+        +Error(message)
+        +DelayLine(message,ms)
+        +DelayLoad(message)
+    }
+
+    class EcoMatic {
+        -decimal CurrentBalance
+        -VendingItem[] _inventory
+        -TransactionTracker _transactionTracker
+        -RecycleTracker _recycleTracker
+        +InsertMoney(decimal)
+        +BuyItem(int)
+        +RecycleForCredit(int,double)
+        +GetChange()
+        +Restock(int)
+        +GenerateDailySalesReport()
+    }
+
+    class TransactionTracker {
+        -string[] _itemNames
+        -decimal[] _unitPrices
+        -int[] _quantities
+        -decimal[] _lineTotals
+        +Add(name, price, qty)
+        +CalculateTotalSpent()
+        +Clear()
+    }
+
+    class RecycleTracker {
+        -string[] _itemNames
+        -double[] _weights
+        -decimal[] _pricePerGram
+        -decimal[] _credits
+        +Add(name, weight, rate, credit)
+        +CalculateTotalCredits()
+        +Clear()
+    }
+
+    class ReceiptPrinter {
+        +Print(TransactionTracker, RecycleTracker, decimal)
+    }
+
+    class SalesReport {
+        -string _eventLogPath
+        +PrintDailyReport(DateTime)
+    }
+
+    class VendingItem {
+        <<abstract>>
+        +string ItemName
+        +decimal ItemPrice
+        +int ItemStock
+        +GetDispenseMessage()
+        +GetExamineMessage()
+        +ToCsvLine()
+    }
+
+    class SnackItem {
+        +double Calories
+    }
+
+    class DrinkItem {
+        +double Volume
+    }
+
+    class MiscItem
+
+    class IHasCalories {
+        +double Calories
+    }
+
+    class IHasVolume {
+        +double Volume
+    }
+
+    Program --> EcoMatic
+    Program ..> Write
+    EcoMatic --> TransactionTracker
+    EcoMatic --> RecycleTracker
+    EcoMatic --> ReceiptPrinter
+    EcoMatic --> SalesReport
+    EcoMatic --> "inventory *" VendingItem
+    TransactionTracker ..> Write
+    RecycleTracker ..> Write
+    SalesReport ..> Write
+    ReceiptPrinter ..> Write
+    ReceiptPrinter ..> TransactionTracker
+    ReceiptPrinter ..> RecycleTracker
+    SalesReport --> VendingItem : logs purchases
+
+    VendingItem <|-- SnackItem
+    VendingItem <|-- DrinkItem
+    VendingItem <|-- MiscItem
+    SnackItem ..|> IHasCalories
+    DrinkItem ..|> IHasVolume
 
 ## License
 

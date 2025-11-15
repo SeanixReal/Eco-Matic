@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.IO;
 using Spectre.Console;
@@ -390,17 +389,8 @@ class EcoMatic
     private VendingItem[] _inventory = new VendingItem[MaxItems];
     public int ItemCount = 0;
 
-    private string[] _transactionItemNames = new string[100];
-    private decimal[] _transactionPrices = new decimal[100];
-    private int[] _transactionQuantities = new int[100];
-    private decimal[] _transactionTotalPrices = new decimal[100];
-    private int _transactionCount = 0;
-
-    private string[] _recycleItemNames = new string[100];
-    private double[] _recycleWeights = new double[100];
-    private decimal[] _recyclePricesPerGram = new decimal[100];
-    private decimal[] _recycleCredits = new decimal[100];
-    private int _recycleCount = 0;
+    private TransactionTracker _transactionTracker = new TransactionTracker();
+    private RecycleTracker _recycleTracker = new RecycleTracker();
     
     public decimal CurrentBalance { get; private set; }
     public decimal[] AcceptedBills = { 20, 50, 100, 200, 500, 1000 };
@@ -423,7 +413,7 @@ class EcoMatic
 
     public void InsertMoney(decimal amount)
     {
-        if (!AcceptedBills.Contains(amount))
+        if (!IsAcceptedBill(amount))
         {
             Write.Error("Invalid bill amount.");
             return;
@@ -462,12 +452,7 @@ class EcoMatic
         UpdateInventory();
         LogEvent("PURCHASE", "BUY_ITEM", item.ItemName, item.ItemPrice, 1, item.ItemPrice, $"Bought 1x {item.ItemName}. Remaining Balance: ₱{CurrentBalance}");
         
-        // add to transaction tracking
-        _transactionItemNames[_transactionCount] = item.ItemName;
-        _transactionPrices[_transactionCount] = item.ItemPrice;
-        _transactionQuantities[_transactionCount] = 1;
-        _transactionTotalPrices[_transactionCount] = item.ItemPrice;
-        _transactionCount++;
+        _transactionTracker.Add(item.ItemName, item.ItemPrice, 1);
         
         Write.DelayLoad("Thanks for using eco-matic! Returning");
     }
@@ -504,102 +489,32 @@ class EcoMatic
         CurrentBalance += credit;
         LogEvent("RECYCLE", "RECYCLE_ITEM", RecyclableItems[id], RecycleItemsPricePerGram[id], (int)grams, credit, $"Recycled {grams}g of {RecyclableItems[id]}. Credited ₱{credit:F2}. Current Balance: ₱{CurrentBalance:F2}");
         
-        // track recycled item
-        _recycleItemNames[_recycleCount] = RecyclableItems[id];
-        _recycleWeights[_recycleCount] = grams;
-        _recyclePricesPerGram[_recycleCount] = RecycleItemsPricePerGram[id];
-        _recycleCredits[_recycleCount] = credit;
-        _recycleCount++;
+        _recycleTracker.Add(RecyclableItems[id], grams, RecycleItemsPricePerGram[id], credit);
         
         Write.Success($"Recycled {grams}g of {RecyclableItems[id]}. Credited ₱{credit:F2}.");
     }
 
     public void GetChange()
     {
-        if (CurrentBalance <= 0 && _transactionCount == 0)
+        bool hasTransactions = _transactionTracker.Count > 0 || _recycleTracker.Count > 0 || CurrentBalance > 0;
+        if (!hasTransactions)
         {
             Write.Error("No transactions to return. Your balance is ₱0.00");
             return;
         }
 
-        // calculate total spent
-        decimal totalSpent = 0;
-        for (int i = 0; i < _transactionCount; i++)
-        {
-            totalSpent += _transactionTotalPrices[i];
-        }
-
-        // create receipt
-        Console.Clear();
-        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
-        AnsiConsole.MarkupLine("[bold cyan]ECO-MATIC RECEIPT[/]");
-        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
-
-        if (_transactionCount > 0)
-        {
-            AnsiConsole.MarkupLine("[yellow]Items Purchased:[/]");
-            for (int i = 0; i < _transactionCount; i++)
-            {
-                AnsiConsole.MarkupLine($"{_transactionItemNames[i]} x{_transactionQuantities[i]} ₱{_transactionTotalPrices[i]:F2}");
-            }
-            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
-            AnsiConsole.MarkupLine($"[cyan]Total Spent:[/] ₱{totalSpent:F2}");
-        }
-
-        if (_recycleCount > 0)
-        {
-            decimal totalRecycleCredit = 0;
-            for (int i = 0; i < _recycleCount; i++)
-            {
-                totalRecycleCredit += _recycleCredits[i];
-            }
-
-            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
-            AnsiConsole.MarkupLine("[green]Items Recycled:[/]");
-            for (int i = 0; i < _recycleCount; i++)
-            {
-                AnsiConsole.MarkupLine($"{_recycleItemNames[i]} {_recycleWeights[i]}g ₱{_recycleCredits[i]:F2}");
-            }
-            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
-            AnsiConsole.MarkupLine($"[cyan]Total Recycled Credit:[/] ₱{totalRecycleCredit:F2}");
-        }
-
-        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
-        AnsiConsole.MarkupLine($"[yellow]Change Amount:[/] ₱{CurrentBalance:F2}");
-        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
-        AnsiConsole.MarkupLine("[italic]Thank you for using Eco-Matic![/]");
-        AnsiConsole.MarkupLine("[italic]Help save the environment today.[/]");
-        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+        ReceiptPrinter.Print(_transactionTracker, _recycleTracker, CurrentBalance);
 
         if (CurrentBalance > 0)
         {
             Write.DelayLine("Dispensing change...", 500);
             Write.Success($"Dispensed ₱{CurrentBalance:F2}");
-            LogEvent("TRANSACTION", "RETURN_CHANGE", "", 0, 1, CurrentBalance, $"Returned ₱{CurrentBalance:F2} to customer.");
+            LogEvent("TRANSACTION", "RETURN_CHANGE", string.Empty, 0, 1, CurrentBalance, $"Returned ₱{CurrentBalance:F2} to customer.");
         }
 
-        // reset for next customer
         CurrentBalance = 0;
-
-        // clear transaction arrays
-        for (int i = 0; i < _transactionCount; i++)
-        {
-            _transactionItemNames[i] = "";
-            _transactionPrices[i] = 0;
-            _transactionQuantities[i] = 0;
-            _transactionTotalPrices[i] = 0;
-        }
-        _transactionCount = 0;
-
-        // clear recycle arrays
-        for (int i = 0; i < _recycleCount; i++)
-        {
-            _recycleItemNames[i] = "";
-            _recycleWeights[i] = 0;
-            _recyclePricesPerGram[i] = 0;
-            _recycleCredits[i] = 0;
-        }
-        _recycleCount = 0;
+        _transactionTracker.Clear();
+        _recycleTracker.Clear();
 
         Console.WriteLine("\nPress any key to continue...");
         Console.ReadKey();
@@ -631,67 +546,8 @@ class EcoMatic
 
     public void GenerateDailySalesReport()
     {
-        Console.Clear();
-        string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
-        string[] lines = File.ReadAllLines(filePath);
-        
-        DateTime today = DateTime.Now.Date;
-        string[] reportItemNames = new string[100];
-        int[] reportQuantities = new int[100];
-        decimal[] reportTotals = new decimal[100];
-        int reportCount = 0;
-        
-        for (int i = 1; i < lines.Length; i++)
-        {
-            string[] parts = lines[i].Split(',');
-            if (parts.Length < 3) continue;
-            
-            if (DateTime.TryParse(parts[0].Trim(), out DateTime timestamp) && timestamp.Date == today && parts[1].Trim() == "PURCHASE")
-            {
-                string itemName = parts[3].Trim();
-                int quantity = int.Parse(parts[5]);
-                decimal totalPrice = decimal.Parse(parts[6]);
-                
-                bool found = false;
-                for (int j = 0; j < reportCount; j++)
-                {
-                    if (reportItemNames[j] == itemName)
-                    {
-                        reportQuantities[j] += quantity;
-                        reportTotals[j] += totalPrice;
-                        found = true;
-                        break;
-                    }
-                }
-                
-                if (!found)
-                {
-                    reportItemNames[reportCount] = itemName;
-                    reportQuantities[reportCount] = quantity;
-                    reportTotals[reportCount] = totalPrice;
-                    reportCount++;
-                }
-            }
-        }
-
-        AnsiConsole.MarkupLine($"[bold green]DAILY SALES REPORT - {today:yyyy-MM-dd}[/]");
-        AnsiConsole.MarkupLine("[bold green]================================[/]");
-
-        if (reportCount == 0)
-        {
-            AnsiConsole.MarkupLine("[yellow]No sales today.[/]");
-            return;
-        }
-
-        decimal totalDailyRevenue = 0;
-        for (int i = 0; i < reportCount; i++)
-        {
-            AnsiConsole.MarkupLine($"{reportItemNames[i]} - Qty: {reportQuantities[i]} - ₱{reportTotals[i]:F2}");
-            totalDailyRevenue += reportTotals[i];
-        }
-
-        AnsiConsole.MarkupLine("[bold green]================================[/]");
-        AnsiConsole.MarkupLine($"[bold cyan]Total Daily Revenue: ₱{totalDailyRevenue:F2}[/]");
+        SalesReport report = new SalesReport(Path.Combine(_dataDirectory, _eventLogFileName));
+        report.PrintDailyReport(DateTime.Now.Date);
     }
 
     public void ViewEventLog()
@@ -1047,6 +903,337 @@ class EcoMatic
             w.WriteLine("Timestamp,EventType,Action,ItemName,UnitPrice,Quantity,TotalPrice,Details");
         }
     }
+
+    private bool IsAcceptedBill(decimal amount)
+    {
+        for (int i = 0; i < AcceptedBills.Length; i++)
+        {
+            if (AcceptedBills[i] == amount)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+// Tracks purchased items for the active customer session using fixed-size arrays.
+class TransactionTracker
+{
+    private const int MaxEntries = 100;
+    private string[] _itemNames = new string[MaxEntries];
+    private decimal[] _unitPrices = new decimal[MaxEntries];
+    private int[] _quantities = new int[MaxEntries];
+    private decimal[] _lineTotals = new decimal[MaxEntries];
+    private int _count = 0;
+
+    public int Count
+    {
+        get { return _count; }
+    }
+
+    public void Add(string itemName, decimal unitPrice, int quantity)
+    {
+        int existingIndex = FindItemIndex(itemName);
+        if (existingIndex >= 0)
+        {
+            _quantities[existingIndex] += quantity;
+            _lineTotals[existingIndex] += unitPrice * quantity;
+            _unitPrices[existingIndex] = unitPrice;
+            return;
+        }
+
+        if (_count >= MaxEntries)
+        {
+            Write.Warning("Transaction tracker is full. Only the first 100 entries will be shown.");
+            return;
+        }
+
+        _itemNames[_count] = itemName;
+        _unitPrices[_count] = unitPrice;
+        _quantities[_count] = quantity;
+        _lineTotals[_count] = unitPrice * quantity;
+        _count++;
+    }
+
+    public string GetItemName(int index)
+    {
+        return _itemNames[index];
+    }
+
+    public int GetQuantity(int index)
+    {
+        return _quantities[index];
+    }
+
+    public decimal GetLineTotal(int index)
+    {
+        return _lineTotals[index];
+    }
+
+    public decimal CalculateTotalSpent()
+    {
+        decimal total = 0;
+        for (int i = 0; i < _count; i++)
+        {
+            total += _lineTotals[i];
+        }
+        return total;
+    }
+
+    public void Clear()
+    {
+        for (int i = 0; i < _count; i++)
+        {
+            _itemNames[i] = string.Empty;
+            _unitPrices[i] = 0;
+            _quantities[i] = 0;
+            _lineTotals[i] = 0;
+        }
+        _count = 0;
+    }
+
+    private int FindItemIndex(string itemName)
+    {
+        for (int i = 0; i < _count; i++)
+        {
+            if (_itemNames[i] == itemName)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+
+// Tracks recycled items and their credit values using fixed-size arrays.
+class RecycleTracker
+{
+    private const int MaxEntries = 100;
+    private string[] _itemNames = new string[MaxEntries];
+    private double[] _weights = new double[MaxEntries];
+    private decimal[] _pricePerGram = new decimal[MaxEntries];
+    private decimal[] _credits = new decimal[MaxEntries];
+    private int _count = 0;
+
+    public int Count
+    {
+        get { return _count; }
+    }
+
+    public void Add(string itemName, double weight, decimal pricePerGram, decimal credit)
+    {
+        int existingIndex = FindItemIndex(itemName);
+        if (existingIndex >= 0)
+        {
+            _weights[existingIndex] += weight;
+            _credits[existingIndex] += credit;
+            _pricePerGram[existingIndex] = pricePerGram;
+            return;
+        }
+
+        if (_count >= MaxEntries)
+        {
+            Write.Warning("Recycle tracker is full. Only the first 100 entries will be shown.");
+            return;
+        }
+
+        _itemNames[_count] = itemName;
+        _weights[_count] = weight;
+        _pricePerGram[_count] = pricePerGram;
+        _credits[_count] = credit;
+        _count++;
+    }
+
+    public string GetItemName(int index)
+    {
+        return _itemNames[index];
+    }
+
+    public double GetWeight(int index)
+    {
+        return _weights[index];
+    }
+
+    public decimal GetCredit(int index)
+    {
+        return _credits[index];
+    }
+
+    public decimal CalculateTotalCredits()
+    {
+        decimal total = 0;
+        for (int i = 0; i < _count; i++)
+        {
+            total += _credits[i];
+        }
+        return total;
+    }
+
+    public void Clear()
+    {
+        for (int i = 0; i < _count; i++)
+        {
+            _itemNames[i] = string.Empty;
+            _weights[i] = 0;
+            _pricePerGram[i] = 0;
+            _credits[i] = 0;
+        }
+        _count = 0;
+    }
+
+    private int FindItemIndex(string itemName)
+    {
+        for (int i = 0; i < _count; i++)
+        {
+            if (_itemNames[i] == itemName)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+
+// Centralized receipt formatting helper so EcoMatic stays focused on business logic.
+class ReceiptPrinter
+{
+    public static void Print(TransactionTracker transactionTracker, RecycleTracker recycleTracker, decimal changeAmount)
+    {
+        Console.Clear();
+        decimal totalSpent = transactionTracker.CalculateTotalSpent();
+        decimal totalRecycleCredit = recycleTracker.CalculateTotalCredits();
+
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+        AnsiConsole.MarkupLine("[bold cyan]ECO-MATIC RECEIPT[/]");
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+
+        if (transactionTracker.Count > 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]Items Purchased:[/]");
+            for (int i = 0; i < transactionTracker.Count; i++)
+            {
+                AnsiConsole.MarkupLine($"{transactionTracker.GetItemName(i)} x{transactionTracker.GetQuantity(i)} ₱{transactionTracker.GetLineTotal(i):F2}");
+            }
+            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+            AnsiConsole.MarkupLine($"[cyan]Total Spent:[/] ₱{totalSpent:F2}");
+        }
+
+        if (recycleTracker.Count > 0)
+        {
+            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+            AnsiConsole.MarkupLine("[green]Items Recycled:[/]");
+            for (int i = 0; i < recycleTracker.Count; i++)
+            {
+                AnsiConsole.MarkupLine($"{recycleTracker.GetItemName(i)} {recycleTracker.GetWeight(i)}g ₱{recycleTracker.GetCredit(i):F2}");
+            }
+            AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+            AnsiConsole.MarkupLine($"[cyan]Total Recycled Credit:[/] ₱{totalRecycleCredit:F2}");
+        }
+
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+        AnsiConsole.MarkupLine($"[yellow]Change Amount:[/] ₱{changeAmount:F2}");
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+        AnsiConsole.MarkupLine("[italic]Thank you for using Eco-Matic![/]");
+        AnsiConsole.MarkupLine("[italic]Help save the environment today.[/]");
+        AnsiConsole.MarkupLine("[bold green]+-------------------------------+[/]");
+    }
+}
+
+// Parses the event log with arrays to build a daily summary without relying on lists.
+class SalesReport
+{
+    private const int MaxEntries = 100;
+    private string _eventLogPath;
+
+    public SalesReport(string eventLogPath)
+    {
+        _eventLogPath = eventLogPath;
+    }
+
+    public void PrintDailyReport(DateTime date)
+    {
+        if (!File.Exists(_eventLogPath))
+        {
+            Write.Error("Event log file is missing.");
+            return;
+        }
+
+        string[] lines = File.ReadAllLines(_eventLogPath);
+        string[] itemNames = new string[MaxEntries];
+        int[] quantities = new int[MaxEntries];
+        decimal[] totals = new decimal[MaxEntries];
+        int entryCount = 0;
+
+        for (int i = 1; i < lines.Length; i++)
+        {
+            string[] parts = lines[i].Split(',');
+            if (parts.Length < 7)
+            {
+                continue;
+            }
+
+            if (!DateTime.TryParse(parts[0].Trim(), out DateTime timestamp))
+            {
+                continue;
+            }
+
+            if (timestamp.Date != date.Date || parts[1].Trim() != "PURCHASE")
+            {
+                continue;
+            }
+
+            string itemName = parts[3].Trim();
+            int quantity = int.Parse(parts[5]);
+            decimal total = decimal.Parse(parts[6]);
+
+            int existingIndex = FindItemIndex(itemNames, entryCount, itemName);
+            if (existingIndex >= 0)
+            {
+                quantities[existingIndex] += quantity;
+                totals[existingIndex] += total;
+            }
+            else if (entryCount < MaxEntries)
+            {
+                itemNames[entryCount] = itemName;
+                quantities[entryCount] = quantity;
+                totals[entryCount] = total;
+                entryCount++;
+            }
+        }
+
+        AnsiConsole.MarkupLine($"[bold green]DAILY SALES REPORT - {date:yyyy-MM-dd}[/]");
+        AnsiConsole.MarkupLine("[bold green]================================[/]");
+
+        if (entryCount == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]No sales today.[/]");
+            return;
+        }
+
+        decimal totalRevenue = 0;
+        for (int i = 0; i < entryCount; i++)
+        {
+            AnsiConsole.MarkupLine($"{itemNames[i]} - Qty: {quantities[i]} - ₱{totals[i]:F2}");
+            totalRevenue += totals[i];
+        }
+
+        AnsiConsole.MarkupLine("[bold green]================================[/]");
+        AnsiConsole.MarkupLine($"[bold cyan]Total Daily Revenue: ₱{totalRevenue:F2}[/]");
+    }
+
+    private int FindItemIndex(string[] itemNames, int count, string itemName)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            if (itemNames[i] == itemName)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 }
 
 interface IHasVolume

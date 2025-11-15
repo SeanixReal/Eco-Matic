@@ -51,6 +51,23 @@ This project can potentially be a great idea in the future to be put on the stre
 ### Hardware Requirements:
 - Any modern computer capable of running the .NET runtime
 
+### Setup & Execution
+1. Install the .NET 9 SDK (or the version referenced in `eco-matic/eco-matic.csproj`).
+2. Restore dependencies and build once to generate data copies:
+
+```bash
+dotnet restore
+dotnet build eco-matic/eco-matic.csproj
+```
+
+3. Run the console app from the repo root:
+
+```bash
+dotnet run --project eco-matic/eco-matic.csproj
+```
+
+The sample inventory and log files in `eco-matic/data` are copied to the build output automatically, so you can start interacting right away.
+
 ## VI. Functional Requirements
 
 ### Customer Functions:
@@ -72,6 +89,8 @@ This project can potentially be a great idea in the future to be put on the stre
 - **Data Persistence**: Automatically load and save the inventory from/to a CSV file
 - **Event Logging**: Automatically log all purchases, recycling activities, and admin actions with a UTC timestamp (Using DateTime from System)
 - **Input Validation**: Guide users to re-enter data if their input is invalid (negative prices, out-of-range stock levels)
+- **Inventory CSV Location**: `eco-matic/data/inventory.csv` serves as the source of truth and is mirrored into `eco-matic/bin/Debug/net9.0/data` during builds
+- **Event Log Location**: Customer/admin actions append to `eco-matic/data/eventLog.csv`, making it easy to archive or reset between demos
 
 ## VII. Features Implemented
 
@@ -100,6 +119,7 @@ This project can potentially be a great idea in the future to be put on the stre
 - Stock level indicators (visual dots and numeric)
 - Input validation and error handling
 - Array-based data structure (no Lists/Dictionaries)
+- Session receipts now aggregate identical purchases and recycle entries, then display the computed change to keep the printout short and presentation-ready.
 
 ## VIII. OOP Concepts Demonstrated
 
@@ -120,7 +140,7 @@ This project promotes **SDG 12: Responsible Consumption and Production** by:
 ## X. Areas for Improvement
 
 ### To Refactor:
-- **Transaction Tracking Arrays**: I'm using too many parallel arrays (`_transactionItemNames[]`, `_transactionPrices[]`, etc.). I should consolidate these into a `Transaction` class
+- **Tracker Data Structures**: Transaction/recycle trackers still rely on manual arrays; introducing lightweight `Transaction`/`RecycleEntry` types (or even simple structs) would simplify maintenance
 - **Code Organization**: Everything is in one `Program.cs` file. I should split my classes into separate files to make the codebase more maintainable
 - **Magic Numbers**: I have hardcoded constants scattered around (array sizes, stock thresholds). I should extract these to class-level constants for easier adjustments
 - **Sales Report**: My report only shows basic metrics. I could enhance it to display insights like best-selling items or item type breakdown
@@ -133,6 +153,8 @@ This project promotes **SDG 12: Responsible Consumption and Production** by:
 ## XI. Author Notes
 
 This is a midterm project demonstrating core C# and OOP principles through a practical, interactive console application. The code emphasizes proper data handling, and user-friendly design while maintaining a focus on sustainability and social responsibility.
+
+For presentations, I usually run `dotnet run --project eco-matic/eco-matic.csproj`, showcase a recycled deposit plus a couple of duplicate purchases, then print the receipt to highlight the grouped lines, total spend, recycle credits, and change return summary.
 
 ## XII. Class Diagram
 
@@ -244,6 +266,7 @@ classDiagram
     SnackItem ..|> IHasCalories
     DrinkItem ..|> IHasVolume
 ```
+
 ## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.

@@ -140,21 +140,18 @@ This project promotes **SDG 12: Responsible Consumption and Production** by:
 ## X. Areas for Improvement
 
 ### To Refactor:
-- **Tracker Data Structures**: Transaction/recycle trackers still rely on manual arrays; introducing lightweight `Transaction`/`RecycleEntry` types (or even simple structs) would simplify maintenance
+- **Tracker Data Structures**: Transaction/recycle trackers still rely on manual arrays
 - **Code Organization**: Everything is in one `Program.cs` file. I should split my classes into separate files to make the codebase more maintainable
-- **Magic Numbers**: I have hardcoded constants scattered around (array sizes, stock thresholds). I should extract these to class-level constants for easier adjustments
-- **Sales Report**: My report only shows basic metrics. I could enhance it to display insights like best-selling items or item type breakdown
+- **Magic Numbers**: I have hardcoded constants scattered around (array sizes, stock thresholds).
+- **Sales Report**: My report only shows basic metrics. I could enhance it to display insights like item type breakdown
 
 ### To Implement:
 - **Advanced Reporting**: I want to add features like multi-day sales reports, inventory valuation, and restock history
 - **Recyclable Item Configuration**: Instead of hardcoding recycling rates, I should make them configurable
-- **Search/Filter for Logs**: I want to add the ability to filter event logs by date, item name, or transaction type (this is gonna be hard fsfs)
 
 ## XI. Author Notes
 
 This is a midterm project demonstrating core C# and OOP principles through a practical, interactive console application. The code emphasizes proper data handling, and user-friendly design while maintaining a focus on sustainability and social responsibility.
-
-For presentations, I usually run `dotnet run --project eco-matic/eco-matic.csproj`, showcase a recycled deposit plus a couple of duplicate purchases, then print the receipt to highlight the grouped lines, total spend, recycle credits, and change return summary.
 
 ## XII. Class Diagram
 

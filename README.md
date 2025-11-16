@@ -158,7 +158,7 @@ For presentations, I usually run `dotnet run --project eco-matic/eco-matic.cspro
 
 ## XII. Class Diagram
 
-![Class Diagram](Assets/Diagrams/ecomatic_Classdiagram_EvenNew.png)
+![Class Diagram](Assets/Diagrams/EcoMatic_ClassDiagram_EvenNew.png)
 
 ## License
 

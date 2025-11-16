@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.IO;
 using Spectre.Console;
@@ -917,7 +918,7 @@ class EcoMatic
     }
 }
 
-// Tracks purchased items for the active customer session using fixed-size arrays.
+// tracks purchased item for receipt
 class TransactionTracker
 {
     private const int MaxEntries = 100;
@@ -985,7 +986,7 @@ class TransactionTracker
     {
         for (int i = 0; i < _count; i++)
         {
-            _itemNames[i] = string.Empty;
+            _itemNames[i] = "";
             _unitPrices[i] = 0;
             _quantities[i] = 0;
             _lineTotals[i] = 0;
@@ -1006,7 +1007,7 @@ class TransactionTracker
     }
 }
 
-// Tracks recycled items and their credit values using fixed-size arrays.
+// tracks recycled item for receipt
 class RecycleTracker
 {
     private const int MaxEntries = 100;
@@ -1074,7 +1075,7 @@ class RecycleTracker
     {
         for (int i = 0; i < _count; i++)
         {
-            _itemNames[i] = string.Empty;
+            _itemNames[i] = "";
             _weights[i] = 0;
             _pricePerGram[i] = 0;
             _credits[i] = 0;
@@ -1095,7 +1096,7 @@ class RecycleTracker
     }
 }
 
-// Centralized receipt formatting helper so EcoMatic stays focused on business logic.
+// prints receipt
 class ReceiptPrinter
 {
     public static void Print(TransactionTracker transactionTracker, RecycleTracker recycleTracker, decimal changeAmount)
@@ -1140,7 +1141,7 @@ class ReceiptPrinter
     }
 }
 
-// Parses the event log with arrays to build a daily summary without relying on lists.
+// parses the eventlog to look for purchases
 class SalesReport
 {
     private const int MaxEntries = 100;
@@ -1164,6 +1165,7 @@ class SalesReport
         int[] quantities = new int[MaxEntries];
         decimal[] totals = new decimal[MaxEntries];
         int entryCount = 0;
+        int totalUnitsSold = 0;
 
         for (int i = 1; i < lines.Length; i++)
         {
@@ -1187,6 +1189,8 @@ class SalesReport
             int quantity = int.Parse(parts[5]);
             decimal total = decimal.Parse(parts[6]);
 
+            totalUnitsSold += quantity;
+
             int existingIndex = FindItemIndex(itemNames, entryCount, itemName);
             if (existingIndex >= 0)
             {
@@ -1201,7 +1205,7 @@ class SalesReport
                 entryCount++;
             }
         }
-
+        AnsiConsole.MarkupLine("\n[bold green]================================[/]");
         AnsiConsole.MarkupLine($"[bold green]DAILY SALES REPORT - {date:yyyy-MM-dd}[/]");
         AnsiConsole.MarkupLine("[bold green]================================[/]");
 
@@ -1212,15 +1216,59 @@ class SalesReport
         }
 
         decimal totalRevenue = 0;
+        int bestIndex = -1;
+        int worstIndex = -1;
+        decimal highestRevenue = 0;
+        int highestQuantity = 0;
+        int lowestQuantity = int.MaxValue;
+        int highestRevenueIndex = -1;
+
         for (int i = 0; i < entryCount; i++)
         {
             AnsiConsole.MarkupLine($"{itemNames[i]} - Qty: {quantities[i]} - ₱{totals[i]:F2}");
             totalRevenue += totals[i];
+
+            if (quantities[i] > highestQuantity)
+            {
+                highestQuantity = quantities[i];
+                bestIndex = i;
+            }
+
+            if (quantities[i] < lowestQuantity)
+            {
+                lowestQuantity = quantities[i];
+                worstIndex = i;
+            }
+
+            if (totals[i] > highestRevenue)
+            {
+                highestRevenue = totals[i];
+                highestRevenueIndex = i;
+            }
         }
 
         AnsiConsole.MarkupLine("[bold green]================================[/]");
-        AnsiConsole.MarkupLine($"[bold cyan]Total Daily Revenue: ₱{totalRevenue:F2}[/]");
+        AnsiConsole.MarkupLine($"[yellow]Total Daily Revenue: ₱{totalRevenue:F2}[/]");
+        AnsiConsole.MarkupLine($"[yellow]Total Units Sold:[/] {totalUnitsSold}");
+        AnsiConsole.MarkupLine("[bold green]================================[/]");
+        if (bestIndex >= 0)
+        {
+            AnsiConsole.MarkupLine($"[green]Best Selling Item:[/] {itemNames[bestIndex]} (Qty {quantities[bestIndex]})");
+        }
+
+        if (worstIndex >= 0)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Slowest Moving Item:[/] {itemNames[worstIndex]} (Qty {quantities[worstIndex]})");
+        }
+
+        if (highestRevenueIndex >= 0)
+        {
+            AnsiConsole.MarkupLine($"[green]Top Revenue Item:[/] {itemNames[highestRevenueIndex]} (₱{totals[highestRevenueIndex]:F2})");
+        }
+
+        AnsiConsole.MarkupLine("[bold green]================================[/]");
     }
+    
 
     private int FindItemIndex(string[] itemNames, int count, string itemName)
     {

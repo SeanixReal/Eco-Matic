@@ -918,7 +918,6 @@ class EcoMatic
     }
 }
 
-// tracks purchased item for receipt
 class TransactionTracker
 {
     private const int MaxEntries = 100;
@@ -1007,7 +1006,6 @@ class TransactionTracker
     }
 }
 
-// tracks recycled item for receipt
 class RecycleTracker
 {
     private const int MaxEntries = 100;
@@ -1096,7 +1094,6 @@ class RecycleTracker
     }
 }
 
-// prints receipt
 class ReceiptPrinter
 {
     public static void Print(TransactionTracker transactionTracker, RecycleTracker recycleTracker, decimal changeAmount)

@@ -96,8 +96,9 @@ class Program
 
     public static void AdminMenu(EcoMatic ecoMatic)
     {
-        Console.Write("Enter Password: ");
-        string password = Console.ReadLine() ?? "";
+        string password = AnsiConsole.Prompt(
+            new TextPrompt<string>("Enter Password: ").Secret()
+        );
         if (password != "admin123")
         {
             Write.Error("Invalid Password.");
@@ -380,7 +381,7 @@ class Write
 
 class EcoMatic
 {
-    public const int MaxItems = 6;
+    public const int MaxItems = 15;
     public const int MaxStocks = 10;
 
     private string _inventoryFileName;
@@ -786,6 +787,15 @@ class EcoMatic
                 w.WriteLine("Drink,Pepsi,30,10,500");
                 w.WriteLine("Misc,Bandaid Box,20,10,");
                 w.WriteLine("Misc,Eco Bag,30.75,10,");
+                w.WriteLine("Snack,Piattos,35,10,150");
+                w.WriteLine("Snack,Chippy,32,10,170");
+                w.WriteLine("Snack,Roller Coaster,28.50,10,140");
+                w.WriteLine("Snack,Fudge Bar,25,10,120");
+                w.WriteLine("Snack,Cheese Ring,30,10,160");
+                w.WriteLine("Drink,RC Cola,25,10,500");
+                w.WriteLine("Drink,Sting,27.50,10,500");
+                w.WriteLine("Drink,Zest-O Orange,15,10,250");
+                w.WriteLine("Drink,Del Monte Pineapple Juice,22.50,10,240");
             }
         }
         catch (IOException ex)

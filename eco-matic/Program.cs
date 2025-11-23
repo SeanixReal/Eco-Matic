@@ -30,30 +30,34 @@ class Program
     {
         while (true)
         {
-            Console.Clear();
-            Console.WriteLine("Main Menu");
-            Console.WriteLine("1. Customer");
-            Console.WriteLine("2. Admin");
-            Console.WriteLine("3. Exit");
-            Console.Write("\nChoice: ");
+            AnsiConsole.Clear();
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[bold yellow]Main Menu[/]")
+                    .PageSize(4)
+                    .AddChoices(new[]
+                    {
+                        "Customer",
+                        "Admin",
+                        "Exit"
+                    })
+            );
 
-            string choice = Console.ReadLine() ?? "";
             switch (choice)
             {
-                case "1":
+                case "Customer":
                     CustomerMenu(ecoMatic);
                     break;
-                case "2":
+                case "Admin":
                     AdminMenu(ecoMatic);
                     break;
-                case "3":
+                case "Exit":
                     Write.DelayLine("Thank you for using Eco-Matic Vending Machine");
                     Write.DelayLine("Have a great and awesome day!");
                     Write.DelayLoad("Exiting");
                     return;
             }
         }
-
     }
 
     public static void CustomerMenu(EcoMatic ecoMatic)
@@ -61,37 +65,45 @@ class Program
         while(true)
         {
             ecoMatic.ShowInventory();
-            Console.WriteLine("\n1. Insert Money");
-            Console.WriteLine("2. Buy Item");
-            Console.WriteLine("3. Examine Item");
-            Console.WriteLine("4. Recycle Item");
-            Console.WriteLine("5. Get Change and Return");
-            Console.Write("Choice: ");
-            string choice = Console.ReadLine() ?? "";
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[bold yellow]Customer Menu[/]")
+                    .PageSize(6)
+                    .AddChoices(new[]
+                    {
+                        "Insert Money",
+                        "Buy Item",
+                        "Examine Item",
+                        "Recycle Item",
+                        "Get Change and Return",
+                        "Back"
+                    })
+            );
 
             switch (choice)
             {
-                case "1":
+                case "Insert Money":
                     CustomerInsertMoneyMenu(ecoMatic);
                     break;
-                case "2":
+                case "Buy Item":
                     CustomerBuyMenu(ecoMatic);
                     break;
-                case "3":
+                case "Examine Item":
                     CustomerExamineMenu(ecoMatic);
                     break;
-                case "4":
+                case "Recycle Item":
                     CustomerRecycleMenu(ecoMatic);
                     break;
-                case "5":
+                case "Get Change and Return":
                     ecoMatic.GetChange();
+                    return;
+                case "Back":
                     return;
                 default:
                     Write.Error("Invalid Input");
                     break;
             }
         }
-        
     }
 
     public static void AdminMenu(EcoMatic ecoMatic)
@@ -107,37 +119,43 @@ class Program
         while (true)
         {
             ecoMatic.ShowInventory();
-            Console.WriteLine("\n1. View Sales Report");
-            Console.WriteLine("2. Restock Item");
-            Console.WriteLine("3. Add Item");
-            Console.WriteLine("4. Remove Item");
-            Console.WriteLine("5. View Event Log");
-            Console.WriteLine("6. Clear Event Log");
-            Console.WriteLine("7. Exit Admin");
-            Console.Write("Choice: ");
-            string choice = Console.ReadLine() ?? "";
+            var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[bold yellow]Admin Menu[/]")
+                    .PageSize(8)
+                    .AddChoices(new[]
+                    {
+                        "View Sales Report",
+                        "Restock Item",
+                        "Add Item",
+                        "Remove Item",
+                        "View Event Log",
+                        "Clear Event Log",
+                        "Exit Admin"
+                    })
+            );
 
             switch (choice)
             {
-                case "1":
+                case "View Sales Report":
                     AdminSalesReportMenu(ecoMatic);
                     break;
-                case "2":
+                case "Restock Item":
                     AdminRestockMenu(ecoMatic);
                     break;
-                case "3":
+                case "Add Item":
                     AdminAddItemMenu(ecoMatic);
                     break;
-                case "4":
+                case "Remove Item":
                     AdminRemoveItemMenu(ecoMatic);
                     break;
-                case "5":
+                case "View Event Log":
                     AdminViewLogMenu(ecoMatic);
                     break;
-                case "6":
+                case "Clear Event Log":
                     AdminClearLogMenu(ecoMatic);
                     break;
-                case "7":
+                case "Exit Admin":
                     return;
                 default:
                     Write.Error("Invalid Input");

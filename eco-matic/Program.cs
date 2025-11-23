@@ -8,7 +8,7 @@ class Program
 {
     public static void Main(string[] args)
     {
-        Console.Clear();
+        AnsiConsole.Clear();
         Console.Title = "Eco-Matic Vending Machine";
         try
         {
@@ -332,7 +332,7 @@ class Program
             AnsiConsole.MarkupLine($"[bold yellow]{i + 1}.[/]{ecoMatic.RecyclableItems[i]} - ₱{ecoMatic.RecycleItemsPricePerGram[i]:F2} per gram");
         }
         Console.WriteLine("Which item would you like to recycle?");
-        Console.Write("Input item ID: ");
+        Console.Write("Input item number: ");
         string input = Console.ReadLine() ?? "";
         if (int.TryParse(input, out int id))
         {
@@ -572,7 +572,7 @@ class EcoMatic
 
     public void ViewEventLog()
     {
-        Console.Clear();
+        AnsiConsole.Clear();
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
         string[] lines = File.ReadAllLines(filePath);
         
@@ -667,7 +667,7 @@ class EcoMatic
 
     public void ShowInventory()
     {
-        Console.Clear();
+        AnsiConsole.Clear();
 
         // create format of table
         Table table = new Table();
@@ -1126,7 +1126,7 @@ class ReceiptPrinter
 {
     public static void Print(TransactionTracker transactionTracker, RecycleTracker recycleTracker, decimal changeAmount)
     {
-        Console.Clear();
+        AnsiConsole.Clear();
         decimal totalSpent = transactionTracker.CalculateTotalSpent();
         decimal totalRecycleCredit = recycleTracker.CalculateTotalCredits();
 

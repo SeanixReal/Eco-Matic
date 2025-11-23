@@ -111,7 +111,7 @@ class Program
         string password = AnsiConsole.Prompt(
             new TextPrompt<string>("Enter Password: ").Secret()
         );
-        if (password != "admin123")
+        if (password != "SeanixGwapo")
         {
             Write.Error("Invalid Password.");
             return;
@@ -216,9 +216,9 @@ class Program
     public static void AdminAddItemMenu(EcoMatic ecoMatic)
     {
         // Check if inventory is already at max before prompting for details
-        if (ecoMatic.ItemCount >= 6)
+        if (ecoMatic.ItemCount >= EcoMatic.MaxItems)
         {
-            Write.Error("Inventory is full! Cannot add more items. Maximum: 6 items");
+            Write.Error($"Inventory is full! Cannot add more items. Maximum: {EcoMatic.MaxItems} items");
             Console.WriteLine("\nPress any key to continue...");
             Console.ReadKey();
             return;

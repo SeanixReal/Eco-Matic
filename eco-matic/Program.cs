@@ -813,7 +813,7 @@ class EcoMatic
                 w.WriteLine("Drink,RC Cola,25,10,500");
                 w.WriteLine("Drink,Sting,27.50,10,500");
                 w.WriteLine("Drink,Zest-O Orange,15,10,250");
-                w.WriteLine("Drink,Del Monte Pineapple Juice,22.50,10,240");
+                w.WriteLine("Drink,Del Monte Pineapple Juice,22.50,10,250");
             }
         }
         catch (IOException ex)

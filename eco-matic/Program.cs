@@ -76,7 +76,6 @@ class Program
                         "Examine Item",
                         "Recycle Item",
                         "Get Change and Return",
-                        "Back"
                     })
             );
 
@@ -96,8 +95,6 @@ class Program
                     break;
                 case "Get Change and Return":
                     ecoMatic.GetChange();
-                    return;
-                case "Back":
                     return;
                 default:
                     Write.Error("Invalid Input");

@@ -13,10 +13,7 @@ class Program
         try
         {
             EcoMatic ecoMatic = new EcoMatic("inventory.csv", "eventLog.csv", "data");
-
-            Write.DelayLine("Eco-Matic is still in early development");
             Write.DelayLoad("Loading");
-
             MainMenu(ecoMatic);
         }
         catch (Exception ex)

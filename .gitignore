@@ -5,6 +5,7 @@
 
 eco-matic/data
 .github
+.venv
 # dotenv files
 .env
 .github

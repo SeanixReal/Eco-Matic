@@ -568,12 +568,49 @@ class EcoMatic
     {
         AnsiConsole.Clear();
         string filePath = Path.Combine(_dataDirectory, _eventLogFileName);
-        string[] lines = File.ReadAllLines(filePath);
-        
-        for (int i = 0; i < lines.Length; i++)
+        if (!File.Exists(filePath))
         {
-            Console.WriteLine(lines[i]);
+            Write.Error("Event log file not found.");
+            return;
         }
+
+        string[] lines = File.ReadAllLines(filePath);
+        if (lines.Length <= 1)
+        {
+            AnsiConsole.MarkupLine("[yellow]Event log is empty.[/]");
+            return;
+        }
+
+        var table = new Table();
+        table.Border = TableBorder.Rounded;
+        table.AddColumn("Timestamp");
+        table.AddColumn("EventType");
+        table.AddColumn("Action");
+        table.AddColumn("ItemName");
+        table.AddColumn("UnitPrice");
+        table.AddColumn("Quantity");
+        table.AddColumn("TotalPrice");
+        table.AddColumn("Details");
+
+        for (int i = 1; i < lines.Length; i++)
+        {
+            var parts = lines[i].Split(',');
+            if (parts.Length < 8)
+                continue;
+
+            table.AddRow(
+                $"[grey]{parts[0]}[/]",
+                $"[yellow]{parts[1]}[/]",
+                $"[cyan]{parts[2]}[/]",
+                $"[white]{parts[3]}[/]",
+                $"[green]{parts[4]}[/]",
+                $"[blue]{parts[5]}[/]",
+                $"[green]{parts[6]}[/]",
+                $"[white]{parts[7]}[/]"
+            );
+        }
+
+        AnsiConsole.Write(table);
     }
 
     public void ClearEventLog()

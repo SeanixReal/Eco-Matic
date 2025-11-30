@@ -15,6 +15,7 @@ class Program
             EcoMatic ecoMatic = new EcoMatic("inventory.csv", "eventLog.csv", "data");
 
             Write.DelayLoad("Loading");
+
             MainMenu(ecoMatic);
         }
         catch (Exception ex)

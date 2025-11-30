@@ -74,7 +74,7 @@ class Program
                         "Buy Item",
                         "Examine Item",
                         "Recycle Item",
-                        "Get Change and Return",
+                        "Get Change and Receipt",
                     })
             );
 
@@ -471,6 +471,7 @@ class EcoMatic
         CurrentBalance += amount;
         LogEvent("TRANSACTION", "INSERT_MONEY", "", 0, 1, 0, $"Inserted ₱{amount}. Current Balance: ₱{CurrentBalance}");
         Write.Success($"₱{amount} inserted successfully.");
+        Thread.Sleep(500);
     }
 
     public void BuyItem(int id)
@@ -541,6 +542,7 @@ class EcoMatic
         _recycleTracker.Add(RecyclableItems[id], grams, RecycleItemsPricePerGram[id], credit);
         
         Write.Success($"Recycled {grams}g of {RecyclableItems[id]}. Credited ₱{credit:F2}.");
+        Thread.Sleep(500);
     }
 
     public void GetChange()
@@ -591,6 +593,7 @@ class EcoMatic
         UpdateInventory();
         Write.Success($"Restocked {item.ItemName} to max capacity. Added {quantityToAdd} units. New stock: {item.ItemStock}/{MaxStocks}");
         LogEvent("RESTOCK", "RESTOCK_ITEM", item.ItemName, 0, quantityToAdd, 0, $"Restocked {item.ItemName} to max. Added {quantityToAdd} units.");
+        Thread.Sleep(500);
     }
 
     public void GenerateDailySalesReport()

@@ -14,7 +14,6 @@ class Program
         {
             EcoMatic ecoMatic = new EcoMatic("inventory.csv", "eventLog.csv", "data");
 
-            Write.DelayLine("Eco-Matic is still in early development");
             Write.DelayLoad("Loading");
 
             MainMenu(ecoMatic);
@@ -163,7 +162,41 @@ class Program
 
     public static void AdminSalesReportMenu(EcoMatic ecoMatic)
     {
-        ecoMatic.GenerateDailySalesReport();
+        var choice = AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title("[bold yellow]Sales Report[/]")
+                .PageSize(6)
+                .AddChoices(new[]
+                {
+                    "Daily",
+                    "Weekly",
+                    "Monthly",
+                    "Yearly",
+                    "Cancel"
+                })
+        );
+
+        switch (choice)
+        {
+            case "Daily":
+                ecoMatic.GenerateDailySalesReport();
+                break;
+            case "Weekly":
+                ecoMatic.GenerateWeeklySalesReport();
+                break;
+            case "Monthly":
+                ecoMatic.GenerateMonthlySalesReport();
+                break;
+            case "Yearly":
+                ecoMatic.GenerateYearlySalesReport();
+                break;
+            case "Cancel":
+                return;
+            default:
+                Write.Error("Invalid Input");
+                break;
+        }
+
         Console.WriteLine("\nPress any key to continue...");
         Console.ReadKey();
     }
@@ -470,8 +503,7 @@ class EcoMatic
         LogEvent("PURCHASE", "BUY_ITEM", item.ItemName, item.ItemPrice, 1, item.ItemPrice, $"Bought 1x {item.ItemName}. Remaining Balance: ₱{CurrentBalance}");
         
         _transactionTracker.Add(item.ItemName, item.ItemPrice, 1);
-        
-        Write.DelayLoad("Thanks for using eco-matic! Returning");
+        Thread.Sleep(500);
     }
 
     public void ExamineItem(int id)
@@ -564,7 +596,31 @@ class EcoMatic
     public void GenerateDailySalesReport()
     {
         SalesReport report = new SalesReport(Path.Combine(_dataDirectory, _eventLogFileName));
-        report.PrintDailyReport(DateTime.Now.Date);
+        report.PrintRangeReport(DateTime.Now.Date, DateTime.Now.Date, $"DAILY SALES REPORT - {DateTime.Now:yyyy-MM-dd}");
+    }
+
+    public void GenerateWeeklySalesReport()
+    {
+        SalesReport report = new SalesReport(Path.Combine(_dataDirectory, _eventLogFileName));
+        DateTime end = DateTime.Now.Date;
+        DateTime start = end.AddDays(-6); // last 7 days including today
+        report.PrintRangeReport(start, end, $"WEEKLY SALES REPORT - {start:yyyy-MM-dd} to {end:yyyy-MM-dd}");
+    }
+
+    public void GenerateMonthlySalesReport()
+    {
+        SalesReport report = new SalesReport(Path.Combine(_dataDirectory, _eventLogFileName));
+        DateTime end = DateTime.Now.Date;
+        DateTime start = new DateTime(end.Year, end.Month, 1);
+        report.PrintRangeReport(start, end, $"MONTHLY SALES REPORT - {start:yyyy-MM-dd} to {end:yyyy-MM-dd}");
+    }
+
+    public void GenerateYearlySalesReport()
+    {
+        SalesReport report = new SalesReport(Path.Combine(_dataDirectory, _eventLogFileName));
+        DateTime end = DateTime.Now.Date;
+        DateTime start = new DateTime(end.Year, 1, 1);
+        report.PrintRangeReport(start, end, $"YEARLY SALES REPORT - {start:yyyy-MM-dd} to {end:yyyy-MM-dd}");
     }
 
     public void ViewEventLog()
@@ -1176,6 +1232,11 @@ class SalesReport
 
     public void PrintDailyReport(DateTime date)
     {
+        PrintRangeReport(date.Date, date.Date, $"DAILY SALES REPORT - {date:yyyy-MM-dd}");
+    }
+
+    public void PrintRangeReport(DateTime startDate, DateTime endDate, string title)
+    {
         if (!File.Exists(_eventLogPath))
         {
             Write.Error("Event log file is missing.");
@@ -1202,7 +1263,7 @@ class SalesReport
                 continue;
             }
 
-            if (timestamp.Date != date.Date || parts[1].Trim() != "PURCHASE")
+            if (timestamp.Date < startDate.Date || timestamp.Date > endDate.Date || parts[1].Trim() != "PURCHASE")
             {
                 continue;
             }
@@ -1227,13 +1288,14 @@ class SalesReport
                 entryCount++;
             }
         }
+
         AnsiConsole.MarkupLine("\n[bold green]================================[/]");
-        AnsiConsole.MarkupLine($"[bold green]DAILY SALES REPORT - {date:yyyy-MM-dd}[/]");
+        AnsiConsole.MarkupLine($"[bold green]{title}[/]");
         AnsiConsole.MarkupLine("[bold green]================================[/]");
 
         if (entryCount == 0)
         {
-            AnsiConsole.MarkupLine("[yellow]No sales today.[/]");
+            AnsiConsole.MarkupLine("[yellow]No sales in the selected range.[/]");
             return;
         }
 
@@ -1270,7 +1332,7 @@ class SalesReport
         }
 
         AnsiConsole.MarkupLine("[bold green]================================[/]");
-        AnsiConsole.MarkupLine($"[yellow]Total Daily Revenue: ₱{totalRevenue:F2}[/]");
+        AnsiConsole.MarkupLine($"[yellow]Total Revenue: ₱{totalRevenue:F2}[/]");
         AnsiConsole.MarkupLine($"[yellow]Total Units Sold:[/] {totalUnitsSold}");
         AnsiConsole.MarkupLine("[bold green]================================[/]");
         if (bestIndex >= 0)

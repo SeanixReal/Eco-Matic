@@ -52,19 +52,30 @@ This project can potentially be a great idea in the future to be put on the stre
 - Any modern computer capable of running the .NET runtime
 
 ### Setup & Execution
-1. Install the .NET 9 SDK (or the version referenced in `eco-matic/eco-matic.csproj`).
-2. Restore dependencies and build once to generate data copies:
 
-```bash
-dotnet restore
-dotnet build eco-matic/eco-matic.csproj
-```
+1. Clone this repository:
 
-3. Run the console app from the repo root:
+  ```bash
+  git clone https://github.com/SeanixReal/Eco-Matic.git
+  cd Eco-Matic
+  ```
 
-```bash
-dotnet run --project eco-matic/eco-matic.csproj
-```
+2. Install the .NET 9 SDK
+
+3. From the repo root, restore dependencies and build:
+
+  ```bash
+  dotnet restore
+  dotnet build eco-matic/eco-matic.csproj
+  ```
+
+4. Run the console app:
+
+  ```bash
+  dotnet run --project eco-matic/eco-matic.csproj
+  ```
+
+All data and output files are handled automatically. No manual folder setup is required.
 
 The sample inventory and log files in `eco-matic/data` are copied to the build output automatically, so you can start interacting right away.
 
@@ -78,8 +89,8 @@ The sample inventory and log files in `eco-matic/data` are copied to the build o
 - **Get Change**: Allow a user to finish their session and receive their remaining balance
 
 ### Administrator Functions:
-- **Restock Items**: Restore the quantity of a specific item to the maximum stock level (10)
-- **Add Item**: Add a new, unique item to the machine's inventory (up to the 6-item limit), defining its type, name, price, stock, and attributes
+- **Restock Items**: Restore the quantity of a specific item to the maximum stock level
+- **Add Item**: Add a new, unique item to the machine's inventory, defining its type, name, price, stock, and attributes
 - **Remove Item**: Permanently remove an item from the machine's inventory
 - **View Log**: Display the complete contents of the transaction log file
 - **Clear Log**: Wipe all entries from the transaction log file after a confirmation prompt
@@ -104,7 +115,7 @@ The sample inventory and log files in `eco-matic/data` are copied to the build o
 - Real-time balance tracking
 
 ### ✅ Admin Mode:
-- Password-protected admin panel (`admin123`)
+- Password-protected admin panel
 - Restock items to max capacity
 - Add new items (snack/drink/misc) with auto-fill to max stock
 - Remove items from inventory

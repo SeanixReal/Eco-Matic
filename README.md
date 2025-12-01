@@ -1,9 +1,9 @@
 # Eco-Matic: Eco Vending Machine Console Application 
 
-## DEMO
+[//]:  ##DEMO
 
-![Customer](Assets/Gifs/Customer.gif)
-![Admin](Assets/Gifs/Admin.gif)
+[//]: #![Customer](Assets/Gifs/Customer.gif)
+[//]: #![Admin](Assets/Gifs/Admin.gif)
 
 ## I. Project Title
 
